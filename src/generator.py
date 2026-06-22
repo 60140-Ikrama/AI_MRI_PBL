@@ -132,7 +132,8 @@ def generate_synthetic_slice(
         # Give tumor a necrosis core (darker inside)
         if tumor_size > 15:
             core_mask = np.zeros((h, w), dtype=np.float32)
-            cv2.fillPoly(core_mask, [np.array(points * 0.45 + [t_cx, t_cy] * 0.55, dtype=np.int32)], 1.0)
+            pts_float = np.array(points, dtype=np.float32)
+            cv2.fillPoly(core_mask, [np.array(pts_float * 0.45 + np.array([t_cx, t_cy]) * 0.55, dtype=np.int32)], 1.0)
             core_mask = cv2.bitwise_and(core_mask, mask)
             img[core_mask > 0] = tumor_val * 0.4
             

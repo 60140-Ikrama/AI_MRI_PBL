@@ -43,14 +43,14 @@ def test_mcnemar_test():
     
     # y_pred1 has 8 correct, y_pred2 has 10 correct
     # Contingency differences:
-    # y_pred2 correct, y_pred1 incorrect: b=2 (index 4, 9)
-    # y_pred1 correct, y_pred2 incorrect: c=0
+    # y_pred2 correct, y_pred1 incorrect: c=2 (index 4, 9)
+    # y_pred1 correct, y_pred2 incorrect: b=0
     
     res = run_mcnemar_test(y_true, y_pred1, y_pred2)
     
     assert res["Test"] == "McNemar Test"
-    assert res["Contingency_b"] == 2
-    assert res["Contingency_c"] == 0
+    assert res["Contingency_b"] == 0
+    assert res["Contingency_c"] == 2
     assert "p_value" in res
 
 def test_cohens_d_and_bootstrap():
