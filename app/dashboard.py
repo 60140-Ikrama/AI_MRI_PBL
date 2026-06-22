@@ -48,61 +48,61 @@ st.set_page_config(
 # Custom Glassmorphic Dark UI Styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Geist:wght@400;500;700&display=swap');
     
     /* Main layout override */
     html, body, [class*="css"], [data-testid="stAppViewContainer"] {
-        font-family: 'Outfit', sans-serif;
-        background-color: #0d1117;
-        color: #c9d1d9;
+        font-family: 'Inter', sans-serif;
+        background-color: #0b1326;
+        color: #dae2fd;
     }
     
     /* Headers styling */
     h1, h2, h3, [data-testid="stHeader"] {
-        font-family: 'Outfit', sans-serif;
-        font-weight: 800 !important;
-        letter-spacing: -0.5px;
-        color: #58a6ff !important;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
+        color: #4cd7f6 !important;
     }
     
     /* Sidebar styling */
     [data-testid="stSidebar"] {
-        background-color: #0b0e14 !important;
-        border-right: 1px solid #21262d;
+        background-color: #060e20 !important;
+        border-right: 1px solid #3d494c;
     }
     
-    /* Card panel styling */
-    div.stCard {
-        background: rgba(22, 27, 34, 0.6);
-        border: 1px solid #30363d;
+    /* Card panel styling - Glass Panel */
+    div.stCard, .glass-panel {
+        background: rgba(23, 31, 51, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid #3d494c;
         border-radius: 12px;
         padding: 20px;
-        backdrop-filter: blur(10px);
         margin-bottom: 15px;
     }
     
-    /* Glowing accents */
+    /* Glowing accents & custom classes */
     .glow-cyan {
-        color: #39ff14;
-        text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+        color: #4cd7f6;
+        text-shadow: 0 0 10px rgba(76, 215, 246, 0.4);
     }
     .badge-high {
-        background-color: #f85149;
-        color: white;
+        background-color: #ffb4ab;
+        color: #690005;
         padding: 4px 8px;
         border-radius: 4px;
         font-weight: bold;
     }
     .badge-med {
-        background-color: #d29922;
-        color: white;
+        background-color: #ddb7ff;
+        color: #2c0051;
         padding: 4px 8px;
         border-radius: 4px;
         font-weight: bold;
     }
     .badge-low {
-        background-color: #2ea043;
-        color: white;
+        background-color: #acedff;
+        color: #001f26;
         padding: 4px 8px;
         border-radius: 4px;
         font-weight: bold;
@@ -111,22 +111,54 @@ st.markdown("""
     /* Streamlit tabs override */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background-color: #161b22;
+        background-color: #171f33;
         padding: 6px;
         border-radius: 8px;
-        border: 1px solid #30363d;
+        border: 1px solid #3d494c;
     }
     .stTabs [data-baseweb="tab"] {
         padding: 8px 16px;
         border-radius: 6px !important;
         font-weight: 600;
-        color: #8b949e !important;
+        color: #bcc9cd !important;
         background-color: transparent !important;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #21262d !important;
-        color: #58a6ff !important;
-        border: 1px solid #30363d !important;
+        background-color: #2d3449 !important;
+        color: #4cd7f6 !important;
+        border: 1px solid #3d494c !important;
+    }
+
+    /* AI scan line effect */
+    .scan-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+    .scan-line {
+        width: 100%;
+        height: 2px;
+        background: #4cd7f6;
+        position: absolute;
+        top: 0;
+        left: 0;
+        animation: scan 3s linear infinite;
+        z-index: 10;
+        box-shadow: 0 0 15px #4cd7f6;
+    }
+    @keyframes scan {
+        0% { top: 0%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+    .ai-pulse {
+        animation: pulse-purple 2s infinite;
+    }
+    @keyframes pulse-purple {
+        0% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(111, 0, 190, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0); }
     }
 </style>
 """, unsafe_allow_html=True)
