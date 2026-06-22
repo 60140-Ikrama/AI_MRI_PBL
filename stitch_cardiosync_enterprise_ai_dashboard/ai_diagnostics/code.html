@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Diagnostic Center | Clinical Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(22, 28, 36, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid #2C343F;
+        }
+        .phosphor-glow {
+            box-shadow: 0 0 15px rgba(117, 255, 158, 0.2);
+        }
+        .attention-zone {
+            background: linear-gradient(180deg, rgba(235, 223, 255, 0) 0%, rgba(235, 223, 255, 0.15) 100%);
+            border-bottom: 2px solid #ebdfff;
+        }
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .scan-effect::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(117, 255, 158, 0.1), transparent);
+            animation: scanline 3s linear infinite;
+        }
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(44, 52, 63, 0.5) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(44, 52, 63, 0.5) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .subgrid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(44, 52, 63, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(44, 52, 63, 0.2) 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#c6e7ff",
+                        "inverse-primary": "#006d35",
+                        "secondary": "#81cfff",
+                        "on-tertiary-fixed": "#1f1732",
+                        "surface-container-highest": "#2f353e",
+                        "inverse-surface": "#dde3ee",
+                        "error-container": "#93000a",
+                        "surface-bright": "#343a42",
+                        "primary": "#75ff9e",
+                        "surface-container-high": "#242a33",
+                        "inverse-on-surface": "#2b3139",
+                        "primary-fixed-dim": "#00e475",
+                        "surface-container-low": "#161c24",
+                        "on-tertiary-container": "#584e6e",
+                        "on-surface-variant": "#bacbb9",
+                        "surface-container-lowest": "#090f16",
+                        "surface-dim": "#0e141c",
+                        "surface-variant": "#2f353e",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#cfc2e7",
+                        "tertiary-fixed-dim": "#cdc1e5",
+                        "on-secondary-fixed-variant": "#004c6b",
+                        "on-surface": "#dde3ee",
+                        "surface-tint": "#00e475",
+                        "on-primary-fixed": "#00210b",
+                        "on-secondary-container": "#003952",
+                        "on-tertiary": "#342c49",
+                        "on-primary-fixed-variant": "#005226",
+                        "surface": "#0e141c",
+                        "on-secondary-fixed": "#001e2d",
+                        "primary-fixed": "#62ff96",
+                        "on-primary": "#003918",
+                        "outline": "#859585",
+                        "background": "#0e141c",
+                        "on-secondary": "#00344b",
+                        "on-tertiary-fixed-variant": "#4b4260",
+                        "secondary-container": "#00a9e8",
+                        "secondary-fixed-dim": "#81cfff",
+                        "primary-container": "#00e676",
+                        "on-background": "#dde3ee",
+                        "on-error": "#690005",
+                        "on-primary-container": "#00612e",
+                        "tertiary-fixed": "#eaddff",
+                        "outline-variant": "#3b4a3d",
+                        "tertiary": "#ebdfff",
+                        "surface-container": "#1a2028",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "data-density-gap": "8px",
+                        "gutter": "16px",
+                        "margin-desktop": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "12px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "vitals-md": ["Inter"],
+                        "vitals-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "vitals-md": ["32px", {"lineHeight": "1", "fontWeight": "700"}],
+                        "vitals-lg": ["48px", {"lineHeight": "1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-dim text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container-high text-primary font-headline-sm text-headline-sm border-b border-outline-variant flex justify-between items-center px-gutter h-16">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">monitor_heart</span>
+<span class="font-label-caps text-label-caps tracking-widest">PATIENT ID: 882-9411</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-4">
+<span class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors cursor-pointer">TELEMETRY</span>
+<span class="text-primary font-label-caps text-label-caps cursor-pointer">AI DIAGNOSTICS</span>
+<span class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors cursor-pointer">ARCHIVE</span>
+</div>
+<button class="bg-error-container text-on-error-container px-4 py-1 rounded-lg font-label-caps text-label-caps active:scale-95 transition-transform">EMERGENCY</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-gutter md:px-margin-desktop max-w-[1600px] mx-auto min-h-screen">
+<!-- Dashboard Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Explainable AI Heatmap & Morphology -->
+<section class="col-span-12 lg:col-span-8 flex flex-col gap-gutter">
+<!-- Main Heatmap Waveform -->
+<div class="glass-panel rounded-xl overflow-hidden relative flex flex-col h-[400px]">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+                            EXPLAINABLE AI HEATMAP (LEAD II)
+                        </h2>
+<div class="flex gap-2">
+<span class="bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded text-[10px] font-bold">ATTENTION ZONE ACTIVE</span>
+</div>
+</div>
+<div class="flex-grow relative grid-bg subgrid-bg flex items-center justify-center p-8 scan-effect">
+<!-- ECG Wave with Heatmap Overlay -->
+<div class="relative w-full h-full flex items-center justify-center">
+<!-- Placeholder for complex SVG waveform with purple highlights -->
+<div class="w-full h-48 bg-contain bg-center bg-no-repeat relative" data-alt="A clinical high-fidelity ECG waveform displayed on a dark medical monitor. The wave is a crisp phosphor green line, with specific sections highlighted by semi-transparent purple 'attention' glows indicating AI focus areas. The background features a subtle medical grid pattern in deep slate. The lighting is low and focused, typical of a cardiology diagnostic lab." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJtA22M-I3AIR7SdMDgKi6Vn-5TlC_QZJk8714WYMUvmmEf_kKsahIyR5EM7STM55DSM9Om88LviVrOsc1tSnQxRJfKNhHr_urR905ejabIzmkAgGlgWoilcZsgAC9JofTwW9vb45GGTd0jvp9tgLF7YzX92fp5scUAL1mmsM4PSoxp-44adFI8Nfw59Cmc-o0qMUkBHj612l9s9_ytXnAdtR1Wk1ean9uWTrdQUW93L_2rwaNzALvyWiGvW4FazXCdvXvJrwoK6A')">
+<!-- Simulated Heatmap Overlays -->
+<div class="absolute left-[30%] top-0 bottom-0 w-16 attention-zone opacity-60"></div>
+<div class="absolute right-[15%] top-0 bottom-0 w-24 attention-zone opacity-40"></div>
+</div>
+</div>
+</div>
+<!-- Research Markers -->
+<div class="p-4 bg-surface-container-low border-t border-outline-variant grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label-caps">P-WAVE PEAK</span>
+<span class="text-primary font-data-mono text-data-mono">DETECTED (NORMAL)</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label-caps">T-WAVE INVERSION</span>
+<span class="text-error font-data-mono text-data-mono">NOT DETECTED</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label-caps">ST SEGMENT</span>
+<span class="text-on-surface font-data-mono text-data-mono">ISOELECTRIC</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-label-caps">SAMPLING RATE</span>
+<span class="text-on-surface font-data-mono text-data-mono">1024 HZ</span>
+</div>
+</div>
+</div>
+<!-- Morphology & Beat-to-Beat -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Morphology Table -->
+<div class="glass-panel rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 border-b border-outline-variant pb-2">MORPHOLOGY ANALYSIS</h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-on-surface font-body-md text-body-md">PR Interval</span>
+<span class="text-primary font-data-mono text-data-mono">160ms</span>
+</div>
+<div class="flex justify-between items-center border-t border-outline-variant/30 pt-2">
+<span class="text-on-surface font-body-md text-body-md">QRS Duration</span>
+<span class="text-primary font-data-mono text-data-mono">90ms</span>
+</div>
+<div class="flex justify-between items-center border-t border-outline-variant/30 pt-2">
+<span class="text-on-surface font-body-md text-body-md">QT/QTc</span>
+<span class="text-primary font-data-mono text-data-mono">400/420ms</span>
+</div>
+<div class="flex justify-between items-center border-t border-outline-variant/30 pt-2">
+<span class="text-on-surface font-body-md text-body-md">Axis</span>
+<span class="text-primary font-data-mono text-data-mono">58° (Normal)</span>
+</div>
+</div>
+</div>
+<!-- Beat-to-Beat Comparison -->
+<div class="glass-panel rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 border-b border-outline-variant pb-2">BEAT-TO-BEAT VARIANCE</h3>
+<div class="h-32 w-full relative grid-bg overflow-hidden flex items-center justify-center">
+<!-- Overlaying Waves Visualization -->
+<div class="absolute inset-0 opacity-20 bg-center bg-contain bg-no-repeat" data-alt="Micro-comparison of cardiac beats showing multiple overlapping light-green and faint-white ECG wave outlines to demonstrate beat-to-beat variance. The visual style is highly technical, using thin 1px lines with a digital glow against a dark, grid-patterned medical interface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC3hPULTYWBMHeJ8Kbp4n5nrYj9rtMOlKSIsPYQhqsTAZ6NqriePv9VyyovG3Y8bL2kNZgcoH1hXt0pVW7BL2Li58d4aQ2751G4fg62ZS-VdBVZlQ2h4NuQUTp17Gn1jK2MM4b5gjbVgOo0YuP9oFtBB37eb3q-_w9CShTxJE52qQmkAZ9d1adFlVmYo2KjLz6L7pB5vPVPj9Qa5ZRxY-0L4vAXs1j6SHdK-jGhRh7ycFf4v767anZ674clhqopr0fiKSFeqcp3lEk')"></div>
+<div class="relative text-center">
+<span class="text-primary font-data-mono text-data-mono px-3 py-1 bg-surface-container rounded-full border border-primary/30">RMSD: 0.042mv</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Diagnostic Intelligence & Scores -->
+<aside class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<!-- Model Confidence Card -->
+<div class="bg-primary-container/10 border border-primary/30 rounded-xl p-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-20">
+<span class="material-symbols-outlined text-[64px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-label-caps text-label-caps text-primary block mb-1">MODEL PERFORMANCE</span>
+<h2 class="font-vitals-lg text-vitals-lg text-primary">99.2%</h2>
+<p class="text-on-surface-variant font-body-md text-body-md mt-2">Diagnosis confidence based on 4.2M clinical records.</p>
+</div>
+<!-- Risk Profiles -->
+<div class="glass-panel rounded-xl p-6 flex flex-col gap-6">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant pb-2">DIAGNOSTIC SCORES</h3>
+<div class="space-y-6">
+<!-- Risk 1 -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="text-on-surface font-headline-sm text-headline-sm">Arrhythmia Risk</span>
+<span class="text-on-surface font-vitals-md text-vitals-md">12%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 12%"></div>
+</div>
+</div>
+<!-- Risk 2 -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="text-on-surface font-headline-sm text-headline-sm">AFib Probability</span>
+<span class="text-on-surface font-vitals-md text-vitals-md">2%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 2%"></div>
+</div>
+</div>
+<!-- Risk 3 (Discrete Status) -->
+<div class="bg-surface-container rounded-lg p-4 border border-outline-variant">
+<span class="text-[10px] text-on-surface-variant font-label-caps block mb-1">SUDDEN CARDIAC RISK</span>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary phosphor-glow"></span>
+<span class="text-primary font-headline-sm text-headline-sm">LOW</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Clinical Recommendations -->
+<div class="glass-panel rounded-xl p-6 border-l-4 border-primary">
+<h3 class="font-label-caps text-label-caps text-primary mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+                        CLINICAL RECOMMENDATION
+                    </h3>
+<p class="text-on-surface font-body-md text-body-md italic leading-relaxed">
+                        "Initial analysis indicates normal sinus rhythm with minor beat variance. Continue monitoring via wearable telemetry. Schedule routine follow-up in 30 days for baseline comparison."
+                    </p>
+<div class="mt-6 flex flex-col gap-2">
+<button class="w-full bg-surface-bright text-on-surface py-3 rounded-lg font-label-caps text-label-caps hover:bg-surface-variant transition-colors border border-outline-variant active:scale-95">GENERATE FULL REPORT</button>
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-caps text-label-caps hover:bg-primary-fixed-dim transition-colors active:scale-95">SIGN &amp; AUTHORIZE</button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-dim border-t border-outline-variant flex justify-around items-center h-20 px-2 pb-safe">
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer group active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer group active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="settings_input_component">settings_input_component</span>
+<span class="font-label-caps text-label-caps">Acquisition</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer group active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="query_stats">query_stats</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1.5 shadow-[0_0_8px_rgba(0,230,118,0.3)] active:scale-90 duration-150 cursor-default">
+<span class="material-symbols-outlined mb-1" data-icon="psychology" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="font-label-caps text-label-caps">AI</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer group active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="assignment">assignment</span>
+<span class="font-label-caps text-label-caps">Records</span>
+</div>
+</nav>
+<script>
+        // Simple Micro-interactions for tactile feedback
+        document.querySelectorAll('button, div[role="button"]').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                // Subtle pulse or hover logic if needed
+            });
+        });
+
+        // Simulating live data update for morphology
+        const updateInterval = setInterval(() => {
+            const confidence = document.querySelector('h2.font-vitals-lg');
+            if (confidence) {
+                const currentVal = parseFloat(confidence.innerText);
+                const jitter = (Math.random() * 0.04 - 0.02).toFixed(3);
+                const newVal = (currentVal + parseFloat(jitter)).toFixed(1);
+                if (newVal > 98.5 && newVal < 99.8) {
+                    confidence.innerText = newVal + '%';
+                }
+            }
+        }, 5000);
+    </script>
+</body></html>

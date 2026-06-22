@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrognosAI-X | MRI Workstation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Geist:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --glass-bg: rgba(30, 41, 59, 0.6);
+            --glass-border: rgba(51, 65, 85, 0.5);
+        }
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+        .imaging-viewport {
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+        }
+        .viewport-active {
+            border: 1px solid #4cd7f6;
+        }
+        .scanline {
+            width: 100%;
+            height: 1px;
+            background: rgba(76, 215, 246, 0.2);
+            position: absolute;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        .mask-overlay {
+            mix-blend-mode: screen;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .pulsate-inference {
+            animation: pulse-purple 2s infinite;
+        }
+        @keyframes pulse-purple {
+            0% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(111, 0, 190, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0); }
+        }
+        input[type=range]::-webkit-slider-runnable-track { background: #3d494c; height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #4cd7f6; margin-top: -4px; cursor: pointer; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-fixed": "#191c1e",
+                        "error": "#ffb4ab",
+                        "inverse-surface": "#dae2fd",
+                        "background": "#0b1326",
+                        "on-surface": "#dae2fd",
+                        "tertiary-fixed": "#e0e3e5",
+                        "secondary-fixed": "#f0dbff",
+                        "tertiary-container": "#a4a7a9",
+                        "surface-container-highest": "#2d3449",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed": "#001f26",
+                        "primary": "#4cd7f6",
+                        "on-secondary-container": "#d6a9ff",
+                        "surface-bright": "#31394d",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed-dim": "#4cd7f6",
+                        "surface-dim": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-surface-variant": "#bcc9cd",
+                        "primary-container": "#06b6d4",
+                        "surface-container": "#171f33",
+                        "on-secondary-fixed": "#2c0051",
+                        "on-secondary": "#490080",
+                        "surface": "#0b1326",
+                        "surface-variant": "#2d3449",
+                        "outline": "#869397",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "tertiary": "#c4c7c9",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#00687a",
+                        "surface-tint": "#4cd7f6",
+                        "surface-container-high": "#222a3d",
+                        "secondary-container": "#6f00be",
+                        "on-tertiary": "#2d3133",
+                        "primary-fixed": "#acedff",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "outline-variant": "#3d494c",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004e5c",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#393d3e",
+                        "secondary": "#ddb7ff",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "on-primary-container": "#00424f",
+                        "on-primary": "#003640"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "density-high": "4px",
+                        "density-standard": "12px",
+                        "component-gap": "8px",
+                        "gutter": "12px",
+                        "unit": "4px",
+                        "container-padding": "16px"
+                    },
+                    "fontFamily": {
+                        "data-mono": ["Geist"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Geist"],
+                        "headline-sm": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "data-mono": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-16 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-headline-sm" style="font-variation-settings: 'FILL' 1;">clinical_notes</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">PrognosAI-X</h1>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<nav class="flex gap-6">
+<button class="font-label-caps text-label-caps text-primary border-b-2 border-primary pb-1">Workstation</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Analysis</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Reports</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Analytics</button>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full border border-outline-variant">
+<span class="w-2 h-2 rounded-full bg-secondary pulsate-inference"></span>
+<span class="font-label-caps text-label-caps text-secondary">AI INFERENCE ACTIVE</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+</div>
+</header>
+<main class="pt-16 h-screen flex flex-col md:flex-row bg-background overflow-hidden">
+<!-- Sidebar: Image Controls -->
+<aside class="w-full md:w-64 border-r border-outline-variant bg-surface-container-low p-container-padding flex flex-col gap-6 overflow-y-auto">
+<section>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">tune</span> VIEWPORT CONTROLS
+                </h3>
+<div class="space-y-4">
+<div class="space-y-2">
+<div class="flex justify-between font-body-sm text-body-sm">
+<label>Contrast</label>
+<span class="text-primary font-data-mono text-data-mono">1.2x</span>
+</div>
+<input class="w-full h-1 bg-outline-variant appearance-none rounded-full cursor-pointer" type="range" value="60"/>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-body-sm text-body-sm">
+<label>Brightness</label>
+<span class="text-primary font-data-mono text-data-mono">0.8x</span>
+</div>
+<input class="w-full h-1 bg-outline-variant appearance-none rounded-full cursor-pointer" type="range" value="40"/>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-body-sm text-body-sm">
+<label>Zoom</label>
+<span class="text-primary font-data-mono text-data-mono">240%</span>
+</div>
+<input class="w-full h-1 bg-outline-variant appearance-none rounded-full cursor-pointer" type="range" value="70"/>
+</div>
+</div>
+</section>
+<section>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">layers</span> SEGMENTATION TOGGLE
+                </h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-2 bg-surface-container rounded-lg border border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-sm bg-primary"></div>
+<span class="font-body-md text-body-md">Tumor Mask</span>
+</div>
+<div class="relative inline-flex items-center cursor-pointer" onclick="toggleMask('tumor')">
+<div class="w-8 h-4 bg-primary rounded-full"></div>
+<div class="absolute right-0.5 w-3 h-3 bg-on-primary rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 bg-surface-container rounded-lg border border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-sm bg-secondary"></div>
+<span class="font-body-md text-body-md">ROI</span>
+</div>
+<div class="relative inline-flex items-center cursor-pointer" onclick="toggleMask('roi')">
+<div class="w-8 h-4 bg-outline-variant rounded-full"></div>
+<div class="absolute left-0.5 w-3 h-3 bg-on-surface-variant rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 space-y-2">
+<div class="flex justify-between font-body-sm text-body-sm">
+<label>Overlay Opacity</label>
+<span class="text-primary font-data-mono text-data-mono">45%</span>
+</div>
+<input class="w-full h-1 bg-outline-variant appearance-none rounded-full cursor-pointer" type="range" value="45"/>
+</div>
+</section>
+<section class="mt-auto">
+<button class="w-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps py-3 rounded-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">download</span> EXPORT DICOM
+                </button>
+</section>
+</aside>
+<!-- Main Viewport Area -->
+<section class="flex-1 flex flex-col min-w-0 bg-black">
+<!-- Sub-Header: Preprocessing Tabs -->
+<div class="h-12 border-b border-outline-variant flex items-center px-4 gap-4 bg-surface">
+<button class="h-full px-4 border-b-2 border-primary font-label-caps text-label-caps text-primary">Original</button>
+<button class="h-full px-4 font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">CLAHE</button>
+<button class="h-full px-4 font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors">Skull Stripped</button>
+<div class="flex-1"></div>
+<div class="flex gap-2">
+<button class="p-1 hover:bg-surface-container rounded"><span class="material-symbols-outlined text-on-surface-variant">grid_view</span></button>
+<button class="p-1 hover:bg-surface-container rounded"><span class="material-symbols-outlined text-primary">square</span></button>
+</div>
+</div>
+<!-- The Workstation Viewport -->
+<div class="flex-1 relative flex items-center justify-center p-8 imaging-viewport viewport-active">
+<div class="scanline"></div>
+<!-- Main MRI Image Container -->
+<div class="relative w-full h-full max-w-2xl flex items-center justify-center">
+<img class="max-h-full rounded-sm shadow-2xl" data-alt="High-resolution axial slice MRI scan of a human brain in high-contrast grayscale. The medical image is set against a pitch-black background with subtle neon cyan and purple digital segmentation overlays tracing anatomical structures. The aesthetic is clinical and high-tech, evoking a professional AI-driven radiology workstation with sharp detail and professional medical imaging clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWndyI1IO7tl-xZKiqLdvmohgo4KXaT_bglmvhtelSmX_0AVeuibLJ9NsLhSqNH_sMmEW6R8CoKnqOkDA2Aoqt5KuJiMrvSv0UmGwehfX85G3pNeN-8DRpCPhUsIGHrP0aUdGGa15gtSlHFPcNGXqWf813s8_aNdqks9EyAPPVlv3AsX2Y_1XxzGti-FJhVJoMd3-iMlp2Koz138Qt-tOtVrcB6HmZUQ0J6JzIvu383Qp8-SPrZIkk-ZMxSO74nBKgNu3T6haW8rQ"/>
+<!-- Cyan Mask Overlay (Simulated) -->
+<div class="mask-overlay absolute inset-0 flex items-center justify-center opacity-40" id="tumor-mask">
+<div class="w-32 h-40 border-2 border-primary rounded-[40%_60%_30%_70%] bg-primary/20 blur-[2px]"></div>
+</div>
+<!-- Purple ROI Overlay (Simulated Hidden) -->
+<div class="mask-overlay absolute inset-0 flex items-center justify-center opacity-0" id="roi-mask">
+<div class="w-48 h-56 border-2 border-secondary rounded-[50%_40%_60%_40%] bg-secondary/10 blur-[1px]"></div>
+</div>
+<!-- Viewport HUD Elements -->
+<div class="absolute top-4 left-4 font-data-mono text-data-mono text-primary flex flex-col gap-1">
+<span>SLICE: 142 / 256</span>
+<span>POS: -24.5mm</span>
+<span>MODALITY: T2W-MRI</span>
+</div>
+<div class="absolute bottom-4 right-4 font-data-mono text-data-mono text-on-surface-variant flex flex-col items-end gap-1">
+<span>FOV: 220 x 220</span>
+<span>ZOOM: 2.4X</span>
+<span class="text-error font-bold">LATENCY: 12ms</span>
+</div>
+<!-- Glassmorphic Tools -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 glass-panel p-2 rounded-full flex gap-4 items-center px-6 border-outline-variant/30">
+<button class="material-symbols-outlined text-on-surface hover:text-primary transition-colors">pan_tool</button>
+<button class="material-symbols-outlined text-on-surface hover:text-primary transition-colors">straighten</button>
+<button class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">adjust</button>
+<button class="material-symbols-outlined text-on-surface hover:text-primary transition-colors">format_color_fill</button>
+<div class="w-px h-6 bg-outline-variant"></div>
+<button class="material-symbols-outlined text-on-surface hover:text-primary transition-colors">undo</button>
+<button class="material-symbols-outlined text-on-surface hover:text-primary transition-colors">redo</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Side: Metrics & Analytics -->
+<aside class="w-full md:w-80 border-l border-outline-variant bg-surface-container-low p-container-padding flex flex-col gap-6 overflow-y-auto">
+<section>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">analytics</span> SEGMENTATION METRICS
+                </h3>
+<div class="grid grid-cols-1 gap-3">
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant">
+<div class="flex justify-between items-end">
+<span class="font-label-caps text-label-caps text-on-surface-variant">DICE SCORE</span>
+<span class="font-display-lg text-[24px] text-primary leading-none">0.92</span>
+</div>
+<div class="mt-2 w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 92%"></div>
+</div>
+</div>
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant">
+<div class="flex justify-between items-end">
+<span class="font-label-caps text-label-caps text-on-surface-variant">IOU (JACCARD)</span>
+<span class="font-display-lg text-[24px] text-primary leading-none">0.88</span>
+</div>
+<div class="mt-2 w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 88%"></div>
+</div>
+</div>
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant">
+<div class="flex justify-between items-end">
+<span class="font-label-caps text-label-caps text-on-surface-variant">HAUSDORFF DISTANCE</span>
+<div class="flex items-baseline gap-1">
+<span class="font-display-lg text-[24px] text-secondary leading-none">1.4</span>
+<span class="font-data-mono text-data-mono text-on-surface-variant">mm</span>
+</div>
+</div>
+<div class="mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-green-400 text-[14px]">arrow_downward</span>
+<span class="text-green-400 text-[10px] font-label-caps">STABLE PERFORMANCE</span>
+</div>
+</div>
+</div>
+</section>
+<section>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">insights</span> CLINICAL INSIGHTS
+                </h3>
+<div class="space-y-3">
+<div class="p-3 bg-primary-container/10 border border-primary/20 rounded-lg">
+<p class="font-body-sm text-body-sm text-on-surface">Tumor volume estimated at <span class="text-primary font-bold">14.2cm³</span>. 12% increase since previous scan (2023-11-12).</p>
+</div>
+<div class="p-3 bg-secondary-container/10 border border-secondary/20 rounded-lg">
+<p class="font-body-sm text-body-sm text-on-surface">Segmentation confidence: <span class="text-secondary font-bold">98.4%</span>. Minimal ROI overlap detected.</p>
+</div>
+</div>
+</section>
+<section>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">PROCESSING HISTORY</h3>
+<div class="space-y-4 relative pl-4 before:content-[''] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-outline-variant">
+<div class="relative">
+<div class="absolute -left-5 top-1 w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-label-caps text-label-caps block text-on-surface-variant">10:42 AM</span>
+<p class="font-body-sm text-body-sm">Inference completed. Results verified.</p>
+</div>
+<div class="relative">
+<div class="absolute -left-5 top-1 w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-caps text-label-caps block text-on-surface-variant">10:41 AM</span>
+<p class="font-body-sm text-body-sm">Skull stripping preprocessing...</p>
+</div>
+<div class="relative">
+<div class="absolute -left-5 top-1 w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-caps text-label-caps block text-on-surface-variant">10:40 AM</span>
+<p class="font-body-sm text-body-sm">DICOM Series Loaded (ID: 994231)</p>
+</div>
+</div>
+</section>
+</aside>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<footer class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center h-20 pb-safe px-4 bg-surface-container border-t border-outline-variant rounded-t-xl">
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">biotech</span>
+<span class="font-label-caps text-label-caps">Workstation</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</div>
+</footer>
+<script>
+        function toggleMask(type) {
+            const tumorMask = document.getElementById('tumor-mask');
+            const roiMask = document.getElementById('roi-mask');
+            
+            if (type === 'tumor') {
+                const isActive = tumorMask.style.opacity === '0.4' || tumorMask.style.opacity === '';
+                tumorMask.style.opacity = isActive ? '0' : '0.4';
+            } else if (type === 'roi') {
+                const isActive = roiMask.style.opacity === '0.4';
+                roiMask.style.opacity = isActive ? '0' : '0.4';
+            }
+        }
+
+        // Micro-interaction: Update slider values visually
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const valDisplay = e.target.parentElement.querySelector('.text-primary, .text-on-surface-variant');
+                if (valDisplay) {
+                    // This is just cosmetic for the demo
+                    const suffix = valDisplay.innerText.includes('%') ? '%' : 
+                                   valDisplay.innerText.includes('x') ? 'x' : '';
+                    const val = e.target.value;
+                    if (suffix === 'x') {
+                        valDisplay.innerText = (val / 50).toFixed(1) + 'x';
+                    } else if (suffix === '%') {
+                        valDisplay.innerText = val + '%';
+                    }
+                }
+            });
+        });
+    </script>
+</body></html>

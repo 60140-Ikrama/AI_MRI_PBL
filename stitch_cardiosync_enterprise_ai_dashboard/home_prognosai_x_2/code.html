@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrognosAI-X | Medical Research Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .scanline {
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #4cd7f6, transparent);
+      position: absolute;
+      animation: scan 3s linear infinite;
+    }
+    @keyframes scan {
+      0% { top: 0%; opacity: 0; }
+      50% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .pulse-ai {
+      animation: pulse-cyan 2s infinite;
+    }
+    @keyframes pulse-cyan {
+      0% { box-shadow: 0 0 0 0 rgba(76, 215, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(76, 215, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(76, 215, 246, 0); }
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-primary-fixed-variant": "#004e5c",
+                  "error": "#ffb4ab",
+                  "tertiary-container": "#a4a7a9",
+                  "surface": "#0b1326",
+                  "surface-container-highest": "#2d3449",
+                  "inverse-on-surface": "#283044",
+                  "secondary-fixed": "#f0dbff",
+                  "on-secondary-fixed-variant": "#6900b3",
+                  "tertiary-fixed": "#e0e3e5",
+                  "error-container": "#93000a",
+                  "surface-bright": "#31394d",
+                  "surface-variant": "#2d3449",
+                  "on-primary-container": "#00424f",
+                  "on-primary": "#003640",
+                  "background": "#0b1326",
+                  "on-tertiary": "#2d3133",
+                  "on-secondary-fixed": "#2c0051",
+                  "inverse-surface": "#dae2fd",
+                  "on-tertiary-fixed-variant": "#444749",
+                  "on-error-container": "#ffdad6",
+                  "on-secondary-container": "#d6a9ff",
+                  "tertiary-fixed-dim": "#c4c7c9",
+                  "primary-fixed-dim": "#4cd7f6",
+                  "tertiary": "#c4c7c9",
+                  "on-primary-fixed": "#001f26",
+                  "surface-container-high": "#222a3d",
+                  "secondary-fixed-dim": "#ddb7ff",
+                  "outline-variant": "#3d494c",
+                  "primary": "#4cd7f6",
+                  "on-tertiary-fixed": "#191c1e",
+                  "on-secondary": "#490080",
+                  "surface-container": "#171f33",
+                  "surface-container-low": "#131b2e",
+                  "secondary-container": "#6f00be",
+                  "on-surface": "#dae2fd",
+                  "surface-container-lowest": "#060e20",
+                  "primary-fixed": "#acedff",
+                  "on-surface-variant": "#bcc9cd",
+                  "on-background": "#dae2fd",
+                  "surface-tint": "#4cd7f6",
+                  "inverse-primary": "#00687a",
+                  "primary-container": "#06b6d4",
+                  "outline": "#869397",
+                  "surface-dim": "#0b1326",
+                  "secondary": "#ddb7ff",
+                  "on-tertiary-container": "#393d3e",
+                  "on-error": "#690005"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "spacing": {
+                  "gutter": "12px",
+                  "container-padding": "16px",
+                  "unit": "4px",
+                  "density-high": "4px",
+                  "component-gap": "8px",
+                  "density-standard": "12px"
+          },
+          "fontFamily": {
+                  "label-caps": ["Geist"],
+                  "data-mono": ["Geist"],
+                  "body-md": ["Inter"],
+                  "display-lg": ["Inter"],
+                  "headline-md": ["Inter"],
+                  "body-sm": ["Inter"],
+                  "headline-sm": ["Inter"]
+          },
+          "fontSize": {
+                  "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                  "data-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                  "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                  "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                  "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- TopAppBar Navigation Shell -->
+<header class="bg-surface text-primary font-headline-md text-headline-md w-full top-0 border-b border-outline-variant flex justify-between items-center px-container-padding h-16 fixed z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="clinical_notes">clinical_notes</span>
+<span class="font-bold text-primary">PrognosAI-X</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-primary font-bold transition-colors" href="#">Workstation</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Analysis</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Reports</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Analytics</a>
+</div>
+<div class="px-3 py-1 rounded bg-primary/10 border border-primary/20">
+<span class="font-label-caps text-label-caps tracking-widest text-primary">SYSTEM: ACTIVE</span>
+</div>
+</div>
+</header>
+<!-- NavigationDrawer (Desktop Side Rail) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-surface-container-low border-r border-outline-variant hidden md:flex flex-col py-6 px-4">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a male medical researcher in a modern clinical lab environment. He is wearing a dark navy scrub top with high-tech equipment in the background. The lighting is cool-toned and sharp, emphasizing a precise and clinical atmosphere for a sophisticated AI-driven medical workstation interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX7-Gn8qfba61Kk0w7zLdvynJZ2978IWW6-hsm1hY-wNne78XV6jSjvyL0dS15coN5hOddKI2yZ7pzE0cwfsa7A7MvUBr09Wa4cOTABG_0RdWwhg5Qp0hNCrZEljsaDW1aozUGyTLKdFnYoZUDT9KQlN7_eUSBKjSM0L5VqEQljj2OzSCMU6_UP8LbCGmuVnrVxT3nnsNph113qQjLHomSep3R5hqIaMEak7iyBBpTNxP7ThZmIJ913LEw5qnE0I2Y7N2yYBRfQvs"/>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary leading-none">Dr. Aris Thorne</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Neuro-Radiology Unit</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<button class="w-full text-left px-4 py-3 rounded text-primary font-bold border-r-2 border-primary bg-primary-container/10 flex items-center gap-3 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="view_in_ar">view_in_ar</span>
+        Workstation
+      </button>
+<button class="w-full text-left px-4 py-3 rounded text-on-surface-variant flex items-center gap-3 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+        Analysis
+      </button>
+<button class="w-full text-left px-4 py-3 rounded text-on-surface-variant flex items-center gap-3 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+        Reports
+      </button>
+<button class="w-full text-left px-4 py-3 rounded text-on-surface-variant flex items-center gap-3 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+        Analytics
+      </button>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant px-2">
+<div class="font-label-caps text-label-caps text-on-surface-variant">NODE CLUSTER</div>
+<div class="font-data-mono text-data-mono text-primary mt-1">Node 04-B</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:pl-64 pt-16 min-h-screen pb-20 md:pb-8">
+<div class="max-w-[1600px] mx-auto p-4 md:p-gutter">
+<!-- Top Status Banner -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+<div>
+<h1 class="font-headline-md text-headline-md text-on-surface">Research Overview</h1>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-on-surface-variant text-body-sm">AI Analysis Complete: </span>
+<span class="font-data-mono text-data-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">PX-9921</span>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container p-3 border border-outline-variant min-w-[140px]">
+<div class="font-label-caps text-label-caps text-on-surface-variant">SCANS TODAY</div>
+<div class="font-headline-sm text-headline-sm text-on-surface mt-1">24 <span class="text-primary text-sm">↑12%</span></div>
+</div>
+<div class="bg-surface-container p-3 border border-outline-variant min-w-[140px]">
+<div class="font-label-caps text-label-caps text-on-surface-variant">MEAN DICE SCORE</div>
+<div class="font-headline-sm text-headline-sm text-primary mt-1">0.92</div>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Hero MRI Section -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low border border-outline-variant relative overflow-hidden group">
+<div class="scanline"></div>
+<div class="flex flex-col h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-container flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="neurology">neurology</span>
+<span class="font-headline-sm text-headline-sm">Current Session: PX-9921</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-error/10 border border-error/20 text-error font-label-caps text-label-caps">ROI DETECTED</span>
+<span class="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary font-label-caps text-label-caps">MRI-T1</span>
+</div>
+</div>
+<div class="relative flex-1 bg-black aspect-video flex items-center justify-center p-4">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-80" data-alt="A high-resolution axial brain MRI scan displayed on a dark medical diagnostic monitor. The image features a vibrant neon cyan segmentation overlay highlighting specific neurological structures within the cerebral cortex. The background is pitch black with subtle 1px cyan border indicators for the active viewport, following a high-density medical workstation aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7i1ST7zG_CsIvQscgvKOJ6JYCyqJlwJDoAe-kLKGBBYYBDLAuUkJlWlfOSYoUBAgwix-4vRsacpyfSBJtqOOPEg-GONsR75zeu1yUNGfd8hn2X_6_lkLLcAT5uMnktxKZY_9oJJAQkwBvHAbSkUNLDOCvBoSd0sl8tQPOymKLp85v64cFcRXowcKrdGa6X6QQk5CVQedON1mIMGAWJ-1JfddmNGlw8Q7pl8sRLmSXMh4kuW66093r8rYumwIsw2Gty7Xyq0BY4Yg"/>
+</div>
+<!-- AI Overlays -->
+<div class="z-10 w-full h-full relative pointer-events-none">
+<div class="absolute top-4 left-4 glass-panel p-3 border border-white/10 rounded-lg">
+<div class="font-label-caps text-label-caps text-primary mb-2">SEGMENTATION STATS</div>
+<div class="space-y-1">
+<div class="flex justify-between gap-8"><span class="text-xs text-on-surface-variant">Volumetric:</span><span class="text-xs font-data-mono">14.2cm³</span></div>
+<div class="flex justify-between gap-8"><span class="text-xs text-on-surface-variant">Confidence:</span><span class="text-xs font-data-mono">98.4%</span></div>
+</div>
+</div>
+<!-- ROI Callout -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-primary border-dashed rounded-full flex items-center justify-center">
+<div class="bg-primary/20 p-1 rounded-full pulse-ai">
+<div class="w-3 h-3 bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Review Action Bar -->
+<div class="absolute bottom-6 left-6 right-6 z-20 flex justify-between items-center">
+<div class="glass-panel px-4 py-2 border border-white/10 rounded-full flex items-center gap-4">
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary" data-icon="zoom_in">zoom_in</span>
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary" data-icon="layers">layers</span>
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary" data-icon="straighten">straighten</span>
+</div>
+<button class="bg-primary text-on-primary font-headline-sm text-headline-sm px-6 py-2 flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20">
+                  Review Findings
+                  <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pipeline Status & Health -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<!-- Pipeline Stepper -->
+<div class="bg-surface-container-low border border-outline-variant p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="settings_slow_motion">settings_slow_motion</span>
+              PROCESSING PIPELINE STATUS
+            </h3>
+<div class="space-y-6 relative">
+<!-- Connector Line -->
+<div class="absolute left-[11px] top-2 bottom-2 w-[1px] bg-outline-variant"></div>
+<!-- Steps -->
+<div class="flex gap-4 relative">
+<div class="z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-on-primary" data-icon="check" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+<div>
+<div class="text-body-md font-bold text-on-surface leading-none">Preprocessing</div>
+<div class="text-xs text-on-surface-variant mt-1">Noise reduction complete (0.4s)</div>
+</div>
+</div>
+<div class="flex gap-4 relative">
+<div class="z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-on-primary" data-icon="check" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+<div>
+<div class="text-body-md font-bold text-on-surface leading-none">Segmentation</div>
+<div class="text-xs text-on-surface-variant mt-1">DeepLabV3+ inference complete</div>
+</div>
+</div>
+<div class="flex gap-4 relative">
+<div class="z-10 w-6 h-6 rounded-full bg-surface-container-highest border border-primary flex items-center justify-center relative">
+<div class="w-2 h-2 bg-primary rounded-full pulse-ai"></div>
+</div>
+<div>
+<div class="text-body-md font-bold text-primary leading-none">Classification</div>
+<div class="text-xs text-on-surface-variant mt-1 italic">ML Inference In-Progress (84%)</div>
+</div>
+</div>
+<div class="flex gap-4 relative opacity-50">
+<div class="z-10 w-6 h-6 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center"></div>
+<div>
+<div class="text-body-md font-bold text-on-surface leading-none">Report Gen</div>
+<div class="text-xs text-on-surface-variant mt-1">Pending classification...</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Cluster Health -->
+<div class="bg-surface-container-low border border-outline-variant p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">SYSTEM CLUSTER HEALTH</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs mb-1">
+<span class="text-on-surface-variant">ML INFERENCE ENGINE</span>
+<span class="font-data-mono text-primary">124ms LATENCY</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest">
+<div class="h-full bg-primary w-[32%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs mb-1">
+<span class="text-on-surface-variant">NODE LOAD (04-B)</span>
+<span class="font-data-mono text-primary">68%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest">
+<div class="h-full bg-primary w-[68%]"></div>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 border border-outline-variant text-body-sm hover:bg-surface-container-high transition-colors">
+              Node Management
+            </button>
+</div>
+</div>
+<!-- Scan Queue List -->
+<div class="col-span-12 bg-surface-container-low border border-outline-variant p-4">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">ACTIVE SCAN QUEUE</h3>
+<div class="text-body-sm text-primary cursor-pointer hover:underline">View All (42)</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="text-left border-b border-outline-variant text-on-surface-variant font-label-caps text-label-caps">
+<th class="pb-3 px-2">PATIENT ID</th>
+<th class="pb-3 px-2">MODALITY</th>
+<th class="pb-3 px-2">STATUS</th>
+<th class="pb-3 px-2">TIME</th>
+<th class="pb-3 px-2 text-right">ACTION</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-data-mono">
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high transition-colors group">
+<td class="py-4 px-2">PX-8842</td>
+<td class="py-4 px-2">Neurological MRI</td>
+<td class="py-4 px-2">
+<span class="px-2 py-0.5 bg-error-container text-on-error-container text-[10px] rounded uppercase font-bold">CRITICAL</span>
+</td>
+<td class="py-4 px-2">04m 12s ago</td>
+<td class="py-4 px-2 text-right">
+<button class="text-primary hover:text-white transition-colors">OPEN VIEWPORT</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high transition-colors group">
+<td class="py-4 px-2">PX-7102</td>
+<td class="py-4 px-2">Thoracic CT</td>
+<td class="py-4 px-2">
+<span class="px-2 py-0.5 border border-primary/40 text-primary text-[10px] rounded uppercase font-bold flex items-center gap-1 w-fit">
+<span class="w-1.5 h-1.5 bg-primary rounded-full"></span> STABLE
+                    </span>
+</td>
+<td class="py-4 px-2">18m 44s ago</td>
+<td class="py-4 px-2 text-right">
+<button class="text-on-surface-variant hover:text-white transition-colors">DETAILS</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high transition-colors group">
+<td class="py-4 px-2">PX-9004</td>
+<td class="py-4 px-2">Cardiac MRI</td>
+<td class="py-4 px-2">
+<span class="px-2 py-0.5 border border-primary/40 text-primary text-[10px] rounded uppercase font-bold flex items-center gap-1 w-fit">
+<span class="w-1.5 h-1.5 bg-primary rounded-full"></span> STABLE
+                    </span>
+</td>
+<td class="py-4 px-2">32m 02s ago</td>
+<td class="py-4 px-2 text-right">
+<button class="text-on-surface-variant hover:text-white transition-colors">DETAILS</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 md:hidden bg-surface-container-lowest border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center text-primary active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="view_in_ar">view_in_ar</span>
+<span class="font-label-caps text-label-caps">Workstation</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</div>
+</nav>
+<!-- FAB: New Scan -->
+<button class="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 pulse-ai">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+<script>
+    // Micro-interactions and real-time feel
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simulate real-time progress for Classification
+      let progress = 84;
+      const progressLabel = document.querySelector('.italic');
+      
+      setInterval(() => {
+        if (progress < 99) {
+          progress += Math.random() * 0.5;
+          if (progressLabel) progressLabel.textContent = `ML Inference In-Progress (${Math.floor(progress)}%)`;
+        }
+      }, 2000);
+
+      // Handle hover effect on MRI tools
+      const mriTools = document.querySelectorAll('.material-symbols-outlined.cursor-pointer');
+      mriTools.forEach(tool => {
+        tool.addEventListener('mouseenter', () => {
+          tool.style.fontVariationSettings = "'FILL' 1";
+        });
+        tool.addEventListener('mouseleave', () => {
+          tool.style.fontVariationSettings = "'FILL' 0";
+        });
+      });
+    });
+  </script>
+</body></html>

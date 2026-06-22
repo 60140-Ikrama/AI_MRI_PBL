@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrognosAI-X | Clinical Segmentation Workstation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .imaging-viewport {
+            background-color: #000000;
+            cursor: crosshair;
+        }
+        .viewport-active {
+            outline: 1px solid #4cd7f6;
+        }
+        .ai-pulse {
+            animation: pulse-purple 2s infinite;
+        }
+        @keyframes pulse-purple {
+            0% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(111, 0, 190, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0); }
+        }
+        /* Custom scrollbar for high-density feel */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0b1326; }
+        ::-webkit-scrollbar-thumb { background: #3d494c; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4cd7f6; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#004e5c",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#a4a7a9",
+                        "surface": "#0b1326",
+                        "surface-container-highest": "#2d3449",
+                        "inverse-on-surface": "#283044",
+                        "secondary-fixed": "#f0dbff",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "tertiary-fixed": "#e0e3e5",
+                        "error-container": "#93000a",
+                        "surface-bright": "#31394d",
+                        "surface-variant": "#2d3449",
+                        "on-primary-container": "#00424f",
+                        "on-primary": "#003640",
+                        "background": "#0b1326",
+                        "on-tertiary": "#2d3133",
+                        "on-secondary-fixed": "#2c0051",
+                        "inverse-surface": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-container": "#d6a9ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary-fixed-dim": "#4cd7f6",
+                        "tertiary": "#c4c7c9",
+                        "on-primary-fixed": "#001f26",
+                        "surface-container-high": "#222a3d",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "outline-variant": "#3d494c",
+                        "primary": "#4cd7f6",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-secondary": "#490080",
+                        "surface-container": "#171f33",
+                        "surface-container-low": "#131b2e",
+                        "secondary-container": "#6f00be",
+                        "on-surface": "#dae2fd",
+                        "surface-container-lowest": "#060e20",
+                        "primary-fixed": "#acedff",
+                        "on-surface-variant": "#bcc9cd",
+                        "on-background": "#dae2fd",
+                        "surface-tint": "#4cd7f6",
+                        "inverse-primary": "#00687a",
+                        "primary-container": "#06b6d4",
+                        "outline": "#869397",
+                        "surface-dim": "#0b1326",
+                        "secondary": "#ddb7ff",
+                        "on-tertiary-container": "#393d3e",
+                        "on-error": "#690005"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "12px",
+                        "container-padding": "16px",
+                        "unit": "4px",
+                        "density-high": "4px",
+                        "component-gap": "8px",
+                        "density-standard": "12px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Geist"],
+                        "data-mono": ["Geist"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "data-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface text-primary font-headline-md text-headline-md w-full top-0 border-b border-outline-variant flex justify-between items-center px-container-padding h-16 w-full shrink-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="clinical_notes">clinical_notes</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">PrognosAI-X</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 px-3 py-1 bg-on-secondary-fixed-variant/20 rounded border border-on-secondary-fixed-variant/40">
+<div class="w-2 h-2 rounded-full bg-secondary ai-pulse"></div>
+<span class="font-label-caps text-label-caps text-secondary">AI INFERENCE ACTIVE</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant tracking-widest border-l border-outline-variant pl-6">SYSTEM: ACTIVE</span>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- NavigationDrawer -->
+<aside class="bg-surface-container-low text-on-surface-variant font-body-md h-full w-64 border-r border-outline-variant hidden md:flex flex-col shrink-0">
+<div class="p-6 border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="account_circle">account_circle</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-bold">Dr. Aris Thorne</p>
+<p class="text-[10px] uppercase tracking-tighter opacity-70">Neuro-Radiology Unit</p>
+</div>
+</div>
+<p class="mt-2 text-[10px] font-data-mono text-primary/60">Node 04-B</p>
+</div>
+<nav class="flex-1 py-4 overflow-y-auto">
+<div class="px-3 mb-2">
+<p class="px-4 py-2 font-label-caps text-label-caps text-on-surface-variant opacity-50">WORKFLOW</p>
+<a class="flex items-center gap-3 px-4 py-3 text-primary font-bold border-r-2 border-primary bg-primary-container/10 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="view_in_ar">view_in_ar</span>
+<span class="font-body-md">Workstation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="font-body-md">Analysis</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-body-md">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body-md">Analytics</span>
+</a>
+</div>
+</nav>
+<div class="p-4 border-t border-outline-variant">
+<div class="bg-surface-container-lowest p-3 rounded border border-outline-variant/30">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">QUICK STATS</p>
+<div class="space-y-1">
+<div class="flex justify-between text-[11px]">
+<span>Dice Score</span>
+<span class="text-primary font-data-mono">0.92</span>
+</div>
+<div class="flex justify-between text-[11px]">
+<span>Latency</span>
+<span class="text-secondary font-data-mono">12ms</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-background relative">
+<!-- Toolbar Overlay (Top) -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 p-1.5 glass-panel rounded-full border border-outline-variant/40 shadow-2xl">
+<button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="pan_tool">pan_tool</span>
+</button>
+<div class="w-px h-5 bg-outline-variant/40 mx-1"></div>
+<button class="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-on-primary shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]" data-icon="draw">draw</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="square_foot">square_foot</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="sticky_note_2">sticky_note_2</span>
+</button>
+<div class="w-px h-5 bg-outline-variant/40 mx-1"></div>
+<button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+<!-- Viewport Controls (Left) -->
+<div class="absolute left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-4">
+<div class="glass-panel p-2 rounded-xl border border-outline-variant/40 space-y-4">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="contrast">contrast</span>
+<div class="h-24 w-1.5 bg-surface-container-highest rounded-full relative">
+<div class="absolute bottom-0 left-0 w-full h-3/4 bg-primary rounded-full"></div>
+<div class="absolute bottom-[75%] left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full border-2 border-primary"></div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="light_mode">light_mode</span>
+<div class="h-24 w-1.5 bg-surface-container-highest rounded-full relative">
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-primary rounded-full"></div>
+<div class="absolute bottom-[50%] left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full border-2 border-primary"></div>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1 pt-2 border-t border-outline-variant/20">
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-highest"><span class="material-symbols-outlined" data-icon="add">add</span></button>
+<span class="text-[10px] font-data-mono">250%</span>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-highest"><span class="material-symbols-outlined" data-icon="remove">remove</span></button>
+</div>
+</div>
+</div>
+<!-- Main Imaging Viewport -->
+<div class="flex-1 flex items-center justify-center p- gutter imaging-viewport relative overflow-hidden viewport-active">
+<!-- Background Grid Pattern -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#3d494c 1px, transparent 1px); background-size: 24px 24px;"></div>
+<!-- Main MRI Container -->
+<div class="relative w-full h-full max-w-4xl max-h-[707px] flex items-center justify-center">
+<!-- MRI Image with mask overlay placeholder -->
+<div class="relative w-full aspect-square md:h-full md:w-auto bg-black border border-outline-variant/20 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex items-center justify-center group overflow-hidden">
+<img class="h-full w-full object-contain mix-blend-lighten opacity-90 transition-transform duration-500 hover:scale-105" data-alt="A clinical high-resolution T2-weighted MRI scan of a human brain in axial cross-section view. The image is rendered in monochrome medical grade grayscale with exceptional detail showing neural structures and ventricles. A semi-transparent neon cyan segmentation mask precisely overlays specific cortical regions, highlighting areas of clinical interest. The background is pitch black, emphasizing the diagnostic focus of the medical workstation aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaCVfkmOKSBHFivjppm5SKhIezwau1XzSuv6WOlwZPDloUz_EZDaN4Ekg7PW5zkEq5m9C4c5LTMrt2hNohNwod135zY2LrK7BM6Qk2G_NUxgOpQCYPUuCXjApdy6MvflH9kAuQnAfVKhkdWGYLtCGhNiFKEPwTr_NTKaYa2XgwgEKEygNLm4IvOYujb7jW3Q29RT_IG9PaAD6KmFaEBp4BXMrDgJTvke7pnLMrfLSulCy5T6I72y7oaXmFh-2kgoMAKhQRPxMmbjc"/>
+<!-- ROI Annotations (Vector Overlays) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" viewbox="0 0 100 100">
+<circle cx="45" cy="38" fill="none" r="4" stroke="#4cd7f6" stroke-dasharray="1 1" stroke-width="0.5"></circle>
+<text class="text-[2px] font-data-mono" fill="#4cd7f6" x="49" y="38">ROI-01: LESION_SUSPECT</text>
+<path d="M 45 42 L 45 55" stroke="#4cd7f6" stroke-width="0.2"></path>
+<rect fill="rgba(172, 237, 255, 0.1)" height="10" stroke="#4cd7f6" stroke-width="0.2" width="10" x="65" y="60"></rect>
+</svg>
+<!-- Corner Metadata -->
+<div class="absolute top-4 left-4 font-data-mono text-[10px] text-primary/80 leading-tight">
+                            P: Thorne, A.<br/>ID: 8829-01-X<br/>SEQ: T2W_AXIAL<br/>SLICE: 42/120
+                        </div>
+<div class="absolute bottom-4 right-4 font-data-mono text-[10px] text-primary/80 text-right leading-tight">
+                            TR: 4000ms<br/>TE: 100ms<br/>FOV: 230mm<br/>RES: 0.5mm
+                        </div>
+</div>
+</div>
+<!-- Bottom Toggle Controls -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex bg-surface-container-highest/60 backdrop-blur-md rounded-lg p-1 border border-outline-variant/40">
+<button class="px-4 py-1.5 text-label-caps font-label-caps bg-primary text-on-primary rounded transition-all">Original</button>
+<button class="px-4 py-1.5 text-label-caps font-label-caps text-on-surface-variant hover:text-on-surface transition-all">CLAHE</button>
+<button class="px-4 py-1.5 text-label-caps font-label-caps text-on-surface-variant hover:text-on-surface transition-all">Skull Stripped</button>
+</div>
+</div>
+<!-- Secondary Metrics Panels (Floating Right) -->
+<div class="absolute right-4 top-20 w-56 flex flex-col gap-3">
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/40 shadow-xl">
+<p class="font-label-caps text-label-caps text-primary mb-3">AI METRICS</p>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<span class="text-xs text-on-surface-variant">Dice Coefficient</span>
+<span class="text-lg font-data-mono text-primary">0.92</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 92%"></div>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Inference Latency</span>
+<span class="font-data-mono text-secondary">12ms</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Confidence Map</span>
+<span class="font-data-mono text-on-surface">98.4%</span>
+</div>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl border border-outline-variant/40 shadow-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant opacity-50 mb-3">SEGMENTATION CLASSES</p>
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+<span class="text-[11px] flex-1">Grey Matter</span>
+<span class="text-[10px] font-data-mono opacity-60">842cc</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-secondary rounded-sm"></div>
+<span class="text-[11px] flex-1">White Matter</span>
+<span class="text-[10px] font-data-mono opacity-60">512cc</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-error rounded-sm"></div>
+<span class="text-[11px] flex-1">Lesion Mass</span>
+<span class="text-[10px] font-data-mono text-error">4.2cc</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 bg-on-tertiary-fixed-variant rounded-sm"></div>
+<span class="text-[11px] flex-1">CSF</span>
+<span class="text-[10px] font-data-mono opacity-60">120cc</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 md:hidden bg-surface-container-lowest border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="view_in_ar">view_in_ar</span>
+<span class="font-label-caps text-label-caps mt-1">Workstation</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="font-label-caps text-label-caps mt-1">Analysis</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-label-caps mt-1">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps mt-1">Analytics</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction: Sync toggle buttons
+        const toggles = document.querySelectorAll('.px-4.py-1\\.5');
+        toggles.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toggles.forEach(b => {
+                    b.classList.remove('bg-primary', 'text-on-primary');
+                    b.classList.add('text-on-surface-variant');
+                });
+                btn.classList.add('bg-primary', 'text-on-primary');
+                btn.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Simple zoom/pan simulation placeholder (visual only)
+        let scale = 1;
+        document.querySelector('.imaging-viewport img').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            scale += e.deltaY * -0.001;
+            scale = Math.min(Math.max(.5, scale), 4);
+            e.target.style.transform = `scale(${scale})`;
+        });
+    </script>
+</body></html>

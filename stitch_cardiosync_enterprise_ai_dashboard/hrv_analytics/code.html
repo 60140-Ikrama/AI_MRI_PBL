@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HRV Analytics | Advanced Biomedical Research</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#c6e7ff",
+                    "inverse-primary": "#006d35",
+                    "secondary": "#81cfff",
+                    "on-tertiary-fixed": "#1f1732",
+                    "surface-container-highest": "#2f353e",
+                    "inverse-surface": "#dde3ee",
+                    "error-container": "#93000a",
+                    "surface-bright": "#343a42",
+                    "primary": "#75ff9e",
+                    "surface-container-high": "#242a33",
+                    "inverse-on-surface": "#2b3139",
+                    "primary-fixed-dim": "#00e475",
+                    "surface-container-low": "#161c24",
+                    "on-tertiary-container": "#584e6e",
+                    "on-surface-variant": "#bacbb9",
+                    "surface-container-lowest": "#090f16",
+                    "surface-dim": "#0e141c",
+                    "surface-variant": "#2f353e",
+                    "error": "#ffb4ab",
+                    "tertiary-container": "#cfc2e7",
+                    "tertiary-fixed-dim": "#cdc1e5",
+                    "on-secondary-fixed-variant": "#004c6b",
+                    "on-surface": "#dde3ee",
+                    "surface-tint": "#00e475",
+                    "on-primary-fixed": "#00210b",
+                    "on-secondary-container": "#003952",
+                    "on-tertiary": "#342c49",
+                    "on-primary-fixed-variant": "#005226",
+                    "surface": "#0e141c",
+                    "on-secondary-fixed": "#001e2d",
+                    "primary-fixed": "#62ff96",
+                    "on-primary": "#003918",
+                    "outline": "#859585",
+                    "background": "#0e141c",
+                    "on-secondary": "#00344b",
+                    "on-tertiary-fixed-variant": "#4b4260",
+                    "secondary-container": "#00a9e8",
+                    "secondary-fixed-dim": "#81cfff",
+                    "primary-container": "#00e676",
+                    "on-background": "#dde3ee",
+                    "on-error": "#690005",
+                    "on-primary-container": "#00612e",
+                    "tertiary-fixed": "#eaddff",
+                    "outline-variant": "#3b4a3d",
+                    "tertiary": "#ebdfff",
+                    "surface-container": "#1a2028",
+                    "on-error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "data-density-gap": "8px",
+                    "gutter": "16px",
+                    "margin-desktop": "24px",
+                    "unit": "4px",
+                    "margin-mobile": "12px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "vitals-md": ["Inter"],
+                    "vitals-lg": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "vitals-md": ["32px", {"lineHeight": "1", "fontWeight": "700"}],
+                    "vitals-lg": ["48px", {"lineHeight": "1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .waveform-grid {
+            background-image: linear-gradient(to right, rgba(59, 74, 61, 0.2) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(59, 74, 61, 0.2) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .waveform-subgrid {
+            background-image: linear-gradient(to right, rgba(59, 74, 61, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(59, 74, 61, 0.1) 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+        .glow-primary { box-shadow: 0 0 12px rgba(117, 255, 158, 0.15); }
+        .glass-overlay { backdrop-filter: blur(12px); background-color: rgba(22, 28, 36, 0.7); }
+        .poincare-dot { border-radius: 50%; opacity: 0.6; filter: blur(1px); transition: transform 0.3s ease; }
+        .poincare-dot:hover { transform: scale(2); opacity: 1; }
+        
+        @keyframes sweep {
+            0% { transform: translateX(-100%); opacity: 0.5; }
+            100% { transform: translateX(100%); opacity: 0.5; }
+        }
+        .sweep-effect {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(117, 255, 158, 0.05), transparent);
+            animation: sweep 4s linear infinite;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container-high text-primary border-b border-outline-variant h-16 flex justify-between items-center px-gutter">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">monitor_heart</span>
+<h1 class="font-headline-sm text-headline-sm uppercase tracking-tight">PATIENT ID: 882-9411</h1>
+</div>
+<div class="flex items-center gap-gutter">
+<div class="hidden md:flex gap-gutter items-center mr-8">
+<span class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Live Stream</span>
+<span class="font-label-caps text-label-caps text-primary border-b-2 border-primary pb-1">HRV Analytics</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Historical Data</span>
+</div>
+<button class="bg-error text-on-error font-label-caps text-label-caps px-4 py-2 rounded active:scale-95 transition-transform">EMERGENCY</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-margin-mobile md:px-margin-desktop max-w-[1920px] mx-auto min-h-screen">
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Column Left: High-density Metrics & AI -->
+<div class="md:col-span-3 flex flex-col gap-gutter">
+<!-- AI Fatigue Card -->
+<div class="bg-surface-container-low border border-outline-variant p-gutter rounded-lg relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant">AI FATIGUE ESTIMATION</h2>
+<span class="material-symbols-outlined text-primary-container text-[18px]">psychology</span>
+</div>
+<div class="font-vitals-lg text-vitals-lg text-primary mb-1">OPTIMAL</div>
+<div class="font-label-caps text-label-caps text-on-primary-fixed-variant tracking-wider">RECOVERY STATE: 94%</div>
+<div class="mt-4 text-[13px] text-on-surface-variant leading-relaxed italic">
+                        "Physiological resilience is peak. Recommend maximum intensity training or high-cognitive load tasks."
+                    </div>
+</div>
+<!-- Time Domain Table -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+<div class="px-gutter py-3 border-b border-outline-variant bg-surface-container-high flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+<h2 class="font-label-caps text-label-caps">TIME DOMAIN ANALYSIS</h2>
+</div>
+<div class="p-gutter flex flex-col gap-2">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-label-caps text-on-surface-variant">SDNN</span>
+<span class="font-data-mono text-data-mono text-primary">64.2 ms</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-label-caps text-on-surface-variant">RMSSD</span>
+<span class="font-data-mono text-data-mono text-primary">48.5 ms</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="font-label-caps text-on-surface-variant">PNN50</span>
+<span class="font-data-mono text-data-mono text-secondary">12.4 %</span>
+</div>
+</div>
+</div>
+<!-- Frequency Domain Detail -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+<div class="px-gutter py-3 border-b border-outline-variant bg-surface-container-high flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">graphic_eq</span>
+<h2 class="font-label-caps text-label-caps">SPECTRAL POWER</h2>
+</div>
+<div class="p-gutter flex flex-col gap-2">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-label-caps text-on-surface-variant">TOTAL POWER</span>
+<span class="font-data-mono text-data-mono text-on-surface">3240 ms²</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-label-caps text-on-surface-variant">VLF (0.003-0.04 HZ)</span>
+<span class="font-data-mono text-data-mono text-on-surface">1120 ms²</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-label-caps text-on-surface-variant">LF (0.04-0.15 HZ)</span>
+<span class="font-data-mono text-data-mono text-on-surface">980 ms²</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="font-label-caps text-on-surface-variant">HF (0.15-0.40 HZ)</span>
+<span class="font-data-mono text-data-mono text-on-surface">740 ms²</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column Center: Waveforms & Visualizers -->
+<div class="md:col-span-6 flex flex-col gap-gutter">
+<!-- Autonomic Balance Gauge Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Gauge -->
+<div class="bg-surface-container border border-outline-variant rounded-lg p-gutter flex flex-col items-center justify-center relative overflow-hidden h-[340px]">
+<div class="absolute inset-0 waveform-subgrid opacity-20"></div>
+<h2 class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 left-4">AUTONOMIC BALANCE</h2>
+<div class="relative w-48 h-48 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle cx="50%" cy="50%" fill="transparent" r="45%" stroke="rgba(44, 52, 63, 1)" stroke-width="8"></circle>
+<circle class="transition-all duration-1000" cx="50%" cy="50%" fill="transparent" r="45%" stroke="var(--tw-color-primary)" stroke-dasharray="282.7" stroke-dashoffset="113.08" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<div class="font-vitals-md text-vitals-md text-on-surface">1.4</div>
+<div class="font-label-caps text-label-caps text-primary">LF/HF RATIO</div>
+</div>
+</div>
+<div class="mt-6 flex gap-12 text-center">
+<div>
+<div class="font-label-caps text-[10px] text-on-surface-variant">SYMPATHETIC</div>
+<div class="font-data-mono text-data-mono text-secondary">58%</div>
+</div>
+<div>
+<div class="font-label-caps text-[10px] text-on-surface-variant">PARASYMP.</div>
+<div class="font-data-mono text-data-mono text-primary">42%</div>
+</div>
+</div>
+<div class="absolute bottom-4 font-label-caps text-label-caps text-primary px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+                            BALANCED
+                        </div>
+</div>
+<!-- Poincaré Plot -->
+<div class="bg-surface-container border border-outline-variant rounded-lg p-gutter relative overflow-hidden h-[340px]">
+<div class="absolute inset-0 waveform-subgrid opacity-20"></div>
+<h2 class="font-label-caps text-label-caps text-on-surface-variant absolute top-4 left-4">POINCARÉ PLOT (STATIC)</h2>
+<div class="w-full h-full flex items-center justify-center relative pt-8">
+<!-- Axis labels -->
+<div class="absolute left-6 bottom-4 font-label-caps text-[10px] text-on-surface-variant -rotate-90 transform-origin-left">RR<sub>n</sub> (ms)</div>
+<div class="absolute right-4 bottom-4 font-label-caps text-[10px] text-on-surface-variant">RR<sub>n+1</sub> (ms)</div>
+<!-- Static Dot Cluster Layout -->
+<div class="relative w-48 h-48 border-l border-b border-outline-variant/30 flex items-center justify-center">
+<!-- The Ellipse -->
+<div class="absolute w-[120px] h-[60px] border border-primary/30 rounded-[50%] rotate-[45deg]"></div>
+<!-- Dots -->
+<div class="absolute poincare-dot bg-primary w-1.5 h-1.5" style="top: 45%; left: 45%;"></div>
+<div class="absolute poincare-dot bg-primary w-1 h-1" style="top: 48%; left: 42%;"></div>
+<div class="absolute poincare-dot bg-primary w-1.5 h-1.5" style="top: 42%; left: 48%;"></div>
+<div class="absolute poincare-dot bg-primary-container w-1 h-1" style="top: 50%; left: 50%;"></div>
+<div class="absolute poincare-dot bg-primary w-1 h-1" style="top: 40%; left: 40%;"></div>
+<div class="absolute poincare-dot bg-primary w-1.5 h-1.5" style="top: 52%; left: 52%;"></div>
+<div class="absolute poincare-dot bg-secondary w-1 h-1" style="top: 55%; left: 40%;"></div>
+<div class="absolute poincare-dot bg-secondary w-1 h-1" style="top: 40%; left: 55%;"></div>
+<div class="absolute poincare-dot bg-primary w-1 h-1" style="top: 47%; left: 47%;"></div>
+<div class="absolute poincare-dot bg-primary w-2 h-2" style="top: 49%; left: 51%;"></div>
+<!-- Additional density scatter -->
+<div class="absolute poincare-dot bg-primary/20 w-1 h-1" style="top: 30%; left: 30%;"></div>
+<div class="absolute poincare-dot bg-primary/20 w-1 h-1" style="top: 70%; left: 70%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 7-Day Trend Chart Area -->
+<div class="bg-surface-container border border-outline-variant rounded-lg p-gutter flex-1 min-h-[300px] relative overflow-hidden">
+<div class="absolute inset-0 waveform-grid opacity-10"></div>
+<div class="sweep-effect"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+                                7-DAY HRV HISTORY (RMSSD)
+                            </h2>
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">TREND</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 bg-outline-variant rounded-full"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">BASELINE</span>
+</div>
+</div>
+</div>
+<!-- Sparkline-style Large Graph -->
+<div class="h-48 w-full flex items-end gap-1 px-2">
+<div class="flex-1 bg-surface-container-highest/50 h-[60%] hover:bg-primary/20 transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">42</div>
+</div>
+<div class="flex-1 bg-surface-container-highest/50 h-[65%] hover:bg-primary/20 transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">45</div>
+</div>
+<div class="flex-1 bg-primary/40 h-[75%] hover:bg-primary transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">52</div>
+</div>
+<div class="flex-1 bg-surface-container-highest/50 h-[58%] hover:bg-primary/20 transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">41</div>
+</div>
+<div class="flex-1 bg-surface-container-highest/50 h-[82%] hover:bg-primary/20 transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">58</div>
+</div>
+<div class="flex-1 bg-primary/60 h-[95%] hover:bg-primary transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">64</div>
+</div>
+<div class="flex-1 bg-primary h-[88%] hover:bg-primary transition-colors group relative rounded-t-sm">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 font-data-mono text-[10px] opacity-0 group-hover:opacity-100">62</div>
+</div>
+</div>
+<div class="flex justify-between mt-2 px-2">
+<span class="font-label-caps text-[10px] text-on-surface-variant">MON</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">TUE</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">WED</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">THU</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">FRI</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">SAT</span>
+<span class="font-label-caps text-[10px] text-primary">SUN</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column Right: Historical & Clinical Data -->
+<div class="md:col-span-3 flex flex-col gap-gutter">
+<!-- Research Grade Card -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
+<div class="px-gutter py-3 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<h2 class="font-label-caps text-label-caps">RESEARCH DATA</h2>
+</div>
+<span class="text-[10px] font-label-caps bg-inverse-on-surface text-background px-1.5 py-0.5 rounded">EXPORT RAW</span>
+</div>
+<div class="p-gutter">
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[11px] font-label-caps text-on-surface-variant mb-1">
+<span>VLF POWER</span>
+<span>34.2%</span>
+</div>
+<div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-on-surface h-full w-[34%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[11px] font-label-caps text-on-surface-variant mb-1">
+<span>LF POWER</span>
+<span>30.5%</span>
+</div>
+<div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[30%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[11px] font-label-caps text-on-surface-variant mb-1">
+<span>HF POWER</span>
+<span>35.3%</span>
+</div>
+<div class="w-full bg-outline-variant h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[35%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- High-Density Clinical Table -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex-1">
+<div class="px-gutter py-3 border-b border-outline-variant bg-surface-container-high flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">list_alt</span>
+<h2 class="font-label-caps text-label-caps">RECENT MEASUREMENTS</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-4 py-2 font-label-caps text-[10px] text-on-surface-variant border-b border-outline-variant">TIME</th>
+<th class="px-4 py-2 font-label-caps text-[10px] text-on-surface-variant border-b border-outline-variant">RMSSD</th>
+<th class="px-4 py-2 font-label-caps text-[10px] text-on-surface-variant border-b border-outline-variant">STATUS</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-[12px]">
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer border-b border-outline-variant/30">
+<td class="px-4 py-2">08:42:15</td>
+<td class="px-4 py-2">62.1</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer border-b border-outline-variant/30">
+<td class="px-4 py-2">08:41:45</td>
+<td class="px-4 py-2">63.8</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer border-b border-outline-variant/30">
+<td class="px-4 py-2">08:41:15</td>
+<td class="px-4 py-2">59.4</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer border-b border-outline-variant/30">
+<td class="px-4 py-2">08:40:45</td>
+<td class="px-4 py-2">61.2</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer border-b border-outline-variant/30">
+<td class="px-4 py-2">08:40:15</td>
+<td class="px-4 py-2">58.7</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer">
+<td class="px-4 py-2">08:39:45</td>
+<td class="px-4 py-2">60.0</td>
+<td class="px-4 py-2 text-primary">STABLE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Export / Actions -->
+<div class="flex flex-col gap-2">
+<button class="w-full bg-surface-container-high border border-outline-variant text-on-surface font-label-caps text-label-caps py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-bright transition-colors active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        GENERATE CLINICAL PDF
+                    </button>
+<button class="w-full bg-primary text-on-primary font-label-caps text-label-caps py-3 rounded-lg flex items-center justify-center gap-2 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">share</span>
+                        BROADCAST DATA
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile only Responsive Pivot) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-dim border-t border-outline-variant flex justify-around items-center h-20 px-2 pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-caps text-label-caps">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+<span class="font-label-caps text-label-caps">Acquisition</span>
+</a>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1.5 shadow-[0_0_8px_rgba(0,230,118,0.3)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</div>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-caps text-label-caps">AI</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-caps text-label-caps">Records</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for the data dots
+        document.querySelectorAll('.poincare-dot').forEach(dot => {
+            dot.addEventListener('mouseenter', () => {
+                dot.style.filter = 'blur(0px)';
+            });
+            dot.addEventListener('mouseleave', () => {
+                dot.style.filter = 'blur(1px)';
+            });
+        });
+
+        // Simple ticker for the "Recent Measurements" table
+        setInterval(() => {
+            const tbody = document.querySelector('tbody');
+            const row = tbody.firstElementChild;
+            if (row) {
+                row.classList.add('bg-primary/10');
+                setTimeout(() => row.classList.remove('bg-primary/10'), 1000);
+            }
+        }, 3000);
+    </script>
+</body></html>

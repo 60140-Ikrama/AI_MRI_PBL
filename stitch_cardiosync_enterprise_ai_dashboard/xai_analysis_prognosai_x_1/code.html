@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrognosAI-X | Explainable AI Workstation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Geist:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#283044",
+                    "on-tertiary-fixed": "#191c1e",
+                    "error": "#ffb4ab",
+                    "inverse-surface": "#dae2fd",
+                    "background": "#0b1326",
+                    "on-surface": "#dae2fd",
+                    "tertiary-fixed": "#e0e3e5",
+                    "secondary-fixed": "#f0dbff",
+                    "tertiary-container": "#a4a7a9",
+                    "surface-container-highest": "#2d3449",
+                    "surface-container-lowest": "#060e20",
+                    "on-primary-fixed": "#001f26",
+                    "primary": "#4cd7f6",
+                    "on-secondary-container": "#d6a9ff",
+                    "surface-bright": "#31394d",
+                    "surface-container-low": "#131b2e",
+                    "primary-fixed-dim": "#4cd7f6",
+                    "surface-dim": "#0b1326",
+                    "on-background": "#dae2fd",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-surface-variant": "#bcc9cd",
+                    "primary-container": "#06b6d4",
+                    "surface-container": "#171f33",
+                    "on-secondary-fixed": "#2c0051",
+                    "on-secondary": "#490080",
+                    "surface": "#0b1326",
+                    "surface-variant": "#2d3449",
+                    "outline": "#869397",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "tertiary": "#c4c7c9",
+                    "on-error-container": "#ffdad6",
+                    "inverse-primary": "#00687a",
+                    "surface-tint": "#4cd7f6",
+                    "surface-container-high": "#222a3d",
+                    "secondary-container": "#6f00be",
+                    "on-tertiary": "#2d3133",
+                    "primary-fixed": "#acedff",
+                    "on-secondary-fixed-variant": "#6900b3",
+                    "outline-variant": "#3d494c",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004e5c",
+                    "on-error": "#690005",
+                    "on-tertiary-container": "#393d3e",
+                    "secondary": "#ddb7ff",
+                    "secondary-fixed-dim": "#ddb7ff",
+                    "on-primary-container": "#00424f",
+                    "on-primary": "#003640"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "density-high": "4px",
+                    "density-standard": "12px",
+                    "component-gap": "8px",
+                    "gutter": "12px",
+                    "unit": "4px",
+                    "container-padding": "16px"
+            },
+            "fontFamily": {
+                    "data-mono": ["Geist"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-caps": ["Geist"],
+                    "headline-sm": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "data-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(61, 73, 76, 0.5);
+        }
+        .imaging-viewport {
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+        }
+        .active-viewport {
+            border: 1px solid #4cd7f6;
+        }
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(76, 215, 246, 0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 4s linear infinite;
+            z-index: 10;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        .ai-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-16 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant">
+<div class="flex items-center gap-component-gap">
+<span class="material-symbols-outlined text-primary dark:text-primary" style="font-size: 24px;">clinical_notes</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">PrognosAI-X</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors" href="#">WORKSPACE</a>
+<a class="font-label-caps text-label-caps text-primary dark:text-primary border-b-2 border-primary pb-1" href="#">ANALYSIS</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors" href="#">RESEARCH</a>
+</nav>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors cursor-pointer">search</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-primary dark:text-primary" style="font-size: 32px;">account_circle</span>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-24 px-4 md:px-8 max-w-[1600px] mx-auto min-h-screen">
+<!-- Top Prediction Banner -->
+<section class="mb-gutter grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<div class="md:col-span-8 glass-panel p-container-padding rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h2 class="font-label-caps text-label-caps text-on-surface-variant mb-1">CORE PREDICTION</h2>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-md text-headline-md text-primary">Glioblastoma Multiforme - High Grade</h1>
+<span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs font-bold">CRITICAL</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-on-surface-variant">CONFIDENCE</span>
+<span class="font-display-lg text-[42px] leading-tight text-primary font-bold">98.4%</span>
+</div>
+</div>
+<div class="md:col-span-4 flex gap-component-gap">
+<div class="flex-1 glass-panel p-container-padding rounded-xl flex flex-col justify-center items-center text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">FOCUS QUALITY</span>
+<div class="flex items-center gap-2 text-green-400">
+<span class="material-symbols-outlined">verified</span>
+<span class="font-headline-sm text-headline-sm">Correct</span>
+</div>
+</div>
+<div class="flex-1 glass-panel p-container-padding rounded-xl flex flex-col justify-center items-center text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">XAI CONFIDENCE</span>
+<span class="font-headline-md text-headline-md text-secondary">94%</span>
+</div>
+</div>
+</section>
+<!-- Main Workstation Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Imaging Column -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Grad-CAM Viewport -->
+<div class="imaging-viewport active-viewport rounded-xl aspect-video w-full group">
+<div class="scanline"></div>
+<div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="A high-resolution black and white axial MRI scan of a human brain featuring a complex tumor mass in the temporal lobe. Overlaid on the tumor is a vibrant Grad-CAM heat map with glowing red and orange colors indicating areas of high AI model attention on the infiltrating margins. The visual style is clinical and technical, with thin cyan measurement lines and medical metadata floating at the edges of the dark slate frame." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBv87GnmSt8Hfe4X1OfEgT5LIAC8spZYe52_pcjpWoppSB-ZQF3dt-kFoobJyReu-6dViNpERhvCfjuGVBpvX3uYyiB72mh5VwzTs1PfN9MmGgsfE1G6fZgQ966GEyGyoj81AbpDZ3tcYDW34nq-gen7qJuEKl4bqUU1nAcd1Eu4oK1bg7DqupCmg3VHteYINOk0qAkWHhMMI3FH23lMCP9bIqelM7tYghgVB91XSRVzQGfe4_XKOrJjvXv8qTfUQnyS4GSLabLmvs')">
+</div>
+<!-- XAI Overlays -->
+<div class="absolute top-4 left-4 glass-panel px-3 py-2 rounded-lg flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary ai-pulse"></div>
+<span class="font-label-caps text-label-caps text-on-surface">GRAD-CAM++ ACTIVE</span>
+</div>
+<div class="absolute bottom-4 right-4 flex gap-2">
+<button class="bg-surface-container-highest/80 hover:bg-surface-container-highest p-2 rounded text-on-surface transition-colors">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="bg-surface-container-highest/80 hover:bg-surface-container-highest p-2 rounded text-on-surface transition-colors">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<button class="bg-primary text-on-primary p-2 rounded transition-transform active:scale-90">
+<span class="material-symbols-outlined">save</span>
+</button>
+</div>
+<!-- ROI Markers -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-dashed border-error/50 w-32 h-32 rounded-full flex items-center justify-center">
+<span class="font-label-caps text-label-caps text-error bg-background/60 px-2 py-0.5 rounded">PRIMARY LESION</span>
+</div>
+</div>
+<!-- Model Comparison Table -->
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-container-padding border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h3 class="font-label-caps text-label-caps text-on-surface">MULTI-MODEL COMPARISON</h3>
+<span class="material-symbols-outlined text-on-surface-variant">compare_arrows</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-data-mono text-data-mono">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant border-b border-outline-variant">
+<th class="px-container-padding py-3 font-semibold uppercase">Architecture</th>
+<th class="px-container-padding py-3 font-semibold uppercase">Accuracy</th>
+<th class="px-container-padding py-3 font-semibold uppercase">FLOPs</th>
+<th class="px-container-padding py-3 font-semibold uppercase">Latency</th>
+<th class="px-container-padding py-3 font-semibold uppercase">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="px-container-padding py-4">Vision Transformer (ViT-L/16)</td>
+<td class="px-container-padding py-4 text-primary">99.1%</td>
+<td class="px-container-padding py-4">12.4G</td>
+<td class="px-container-padding py-4">45ms</td>
+<td class="px-container-padding py-4"><span class="text-secondary-container bg-secondary-fixed-dim px-2 py-0.5 rounded-full text-[10px]">CURRENT</span></td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="px-container-padding py-4">EfficientNetV2-M</td>
+<td class="px-container-padding py-4 text-primary">98.4%</td>
+<td class="px-container-padding py-4">8.2G</td>
+<td class="px-container-padding py-4">28ms</td>
+<td class="px-container-padding py-4 text-on-surface-variant">Standby</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="px-container-padding py-4">MobileNetV3-Large</td>
+<td class="px-container-padding py-4 text-primary">94.2%</td>
+<td class="px-container-padding py-4">0.6G</td>
+<td class="px-container-padding py-4">6ms</td>
+<td class="px-container-padding py-4 text-on-surface-variant">Standby</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Analysis Column -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<!-- AI Insight Widget -->
+<div class="glass-panel p-container-padding rounded-xl bg-secondary-container/10 border-secondary-container/30">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h3 class="font-headline-sm text-headline-sm text-secondary">Explainability Insights</h3>
+</div>
+<p class="text-body-md text-on-surface-variant leading-relaxed mb-4">
+                        Grad-CAM analysis confirms model attention is primarily focused on the <span class="text-secondary font-semibold">hyper-intense necrotic core</span> and the infiltrating margins of the temporal lobe. High confidence in classification is driven by the vascular proliferation patterns detected.
+                    </p>
+<div class="space-y-3">
+<div class="bg-surface-container-low p-3 rounded border border-outline-variant">
+<div class="flex justify-between mb-2">
+<span class="text-label-caps text-on-surface-variant">FEATURE RELEVANCE: VASCULAR</span>
+<span class="text-data-mono text-primary">88%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[88%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded border border-outline-variant">
+<div class="flex justify-between mb-2">
+<span class="text-label-caps text-on-surface-variant">FEATURE RELEVANCE: TISSUE DENSITY</span>
+<span class="text-data-mono text-primary">74%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[74%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Error Analysis Widget -->
+<div class="glass-panel p-container-padding rounded-xl">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">ROOT-CAUSE ANALYSIS</h3>
+<span class="material-symbols-outlined text-error">analytics</span>
+</div>
+<div class="p-4 bg-error-container/10 rounded-lg border border-error-container/20">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-1">warning</span>
+<div>
+<h4 class="font-body-md font-bold text-on-surface mb-1">Small Tumor Detection</h4>
+<p class="text-body-sm text-on-surface-variant">
+                                    Historical data suggests potential false negatives in lesions under 5mm. Model sensitivity requires manual validation for adjecent micro-lesions.
+                                </p>
+</div>
+</div>
+<div class="mt-4 flex gap-2">
+<button class="flex-1 bg-surface-container-highest text-on-surface py-2 rounded text-body-sm hover:bg-surface-bright transition-colors font-semibold uppercase tracking-wider">Review Histology</button>
+<button class="flex-1 bg-primary text-on-primary py-2 rounded text-body-sm hover:opacity-90 transition-opacity font-semibold uppercase tracking-wider">Augment View</button>
+</div>
+</div>
+</div>
+<!-- Analytics Micro-Chart -->
+<div class="glass-panel p-container-padding rounded-xl flex-1">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-6">INFERENCE METRICS</h3>
+<div class="flex flex-col gap-6">
+<div class="flex items-end gap-1 h-32 px-4">
+<!-- Simple Bar Chart -->
+<div class="flex-1 bg-surface-container-highest rounded-t hover:bg-primary/50 transition-colors cursor-pointer group relative" style="height: 40%">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-primary text-on-primary px-1 rounded text-[10px] font-bold">40%</div>
+</div>
+<div class="flex-1 bg-surface-container-highest rounded-t hover:bg-primary/50 transition-colors cursor-pointer group relative" style="height: 65%">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-primary text-on-primary px-1 rounded text-[10px] font-bold">65%</div>
+</div>
+<div class="flex-1 bg-primary rounded-t group relative" style="height: 92%">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 scale-100 bg-primary text-on-primary px-1 rounded text-[10px] font-bold">92%</div>
+</div>
+<div class="flex-1 bg-surface-container-highest rounded-t hover:bg-primary/50 transition-colors cursor-pointer group relative" style="height: 55%">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-primary text-on-primary px-1 rounded text-[10px] font-bold">55%</div>
+</div>
+<div class="flex-1 bg-surface-container-highest rounded-t hover:bg-primary/50 transition-colors cursor-pointer group relative" style="height: 78%">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-primary text-on-primary px-1 rounded text-[10px] font-bold">78%</div>
+</div>
+</div>
+<div class="flex justify-between px-2 font-data-mono text-[10px] text-on-surface-variant uppercase">
+<span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span>
+</div>
+<div class="mt-2 p-3 bg-surface-container rounded border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">bolt</span>
+<span class="text-body-sm font-semibold">Peak GPU Load</span>
+</div>
+<span class="text-data-mono text-primary">22.4 TFLOPS</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center h-20 pb-safe px-4 bg-surface-container dark:bg-surface-container border-t border-outline-variant dark:border-outline-variant rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined mb-1">biotech</span>
+<span class="font-label-caps text-label-caps">Workstation</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-6 py-2 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined mb-1">description</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined mb-1">query_stats</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</button>
+</nav>
+<script>
+        // Simple Interaction logic
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 150);
+            });
+        });
+
+        // Simulating medical metadata typing effect
+        const metaValues = ["Slice 42/120", "TE: 20ms", "TR: 400ms", "SNR: 1.4", "FOV: 240mm"];
+        setInterval(() => {
+            const randomMeta = metaValues[Math.floor(Math.random() * metaValues.length)];
+            // Console log or visual update could go here
+        }, 5000);
+    </script>
+</body></html>

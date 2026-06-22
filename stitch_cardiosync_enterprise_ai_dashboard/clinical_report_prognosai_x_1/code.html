@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Geist:wght@400;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .ai-pulse {
+            animation: pulse-purple 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-purple {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .7; transform: scale(1.05); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b1326; }
+        ::-webkit-scrollbar-thumb { background: #3d494c; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4cd7f6; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#283044",
+                        "on-tertiary-fixed": "#191c1e",
+                        "error": "#ffb4ab",
+                        "inverse-surface": "#dae2fd",
+                        "background": "#0b1326",
+                        "on-surface": "#dae2fd",
+                        "tertiary-fixed": "#e0e3e5",
+                        "secondary-fixed": "#f0dbff",
+                        "tertiary-container": "#a4a7a9",
+                        "surface-container-highest": "#2d3449",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed": "#001f26",
+                        "primary": "#4cd7f6",
+                        "on-secondary-container": "#d6a9ff",
+                        "surface-bright": "#31394d",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed-dim": "#4cd7f6",
+                        "surface-dim": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-surface-variant": "#bcc9cd",
+                        "primary-container": "#06b6d4",
+                        "surface-container": "#171f33",
+                        "on-secondary-fixed": "#2c0051",
+                        "on-secondary": "#490080",
+                        "surface": "#0b1326",
+                        "surface-variant": "#2d3449",
+                        "outline": "#869397",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "tertiary": "#c4c7c9",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#00687a",
+                        "surface-tint": "#4cd7f6",
+                        "surface-container-high": "#222a3d",
+                        "secondary-container": "#6f00be",
+                        "on-tertiary": "#2d3133",
+                        "primary-fixed": "#acedff",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "outline-variant": "#3d494c",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004e5c",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#393d3e",
+                        "secondary": "#ddb7ff",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "on-primary-container": "#00424f",
+                        "on-primary": "#003640"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "density-high": "4px",
+                        "density-standard": "12px",
+                        "component-gap": "8px",
+                        "gutter": "12px",
+                        "unit": "4px",
+                        "container-padding": "16px"
+                    },
+                    "fontFamily": {
+                        "data-mono": ["Geist"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Geist"],
+                        "headline-sm": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "data-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden selection:bg-primary/30">
+<!-- Top Navigation -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-16 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant">
+<div class="flex items-center gap-component-gap">
+<span class="material-symbols-outlined text-primary font-headline-sm text-headline-sm" data-icon="clinical_notes">clinical_notes</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">PrognosAI-X</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex gap-6 items-center px-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Workstation</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Analysis</a>
+<a class="font-label-caps text-label-caps text-primary border-b-2 border-primary pb-1 uppercase tracking-widest" href="#">Reports</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Analytics</a>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors active:scale-95 duration-150" data-icon="account_circle">account_circle</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-4 md:px-container-padding max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Clinical Diagnostic Report</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="patient_list">patient_list</span>
+                    Patient ID: <span class="font-data-mono text-data-mono text-primary">PX-8829-G</span> • Last Updated: Oct 24, 2023
+                </p>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high hover:bg-surface-bright text-primary border border-outline-variant px-4 py-2 rounded-lg font-label-caps text-label-caps transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="picture_as_pdf">picture_as_pdf</span>
+                    Generate PDF Report
+                </button>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-caps text-label-caps transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+                    Sign &amp; Send to PACS
+                </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Left Column: LLM Summary -->
+<div class="md:col-span-7 flex flex-col gap-gutter">
+<section class="bg-surface-container rounded-xl p-container-padding border border-outline-variant relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none">
+
+</div>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary-container ai-pulse" data-icon="bolt">bolt</span>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Automated Summary Powered by Gemini</h3>
+</div>
+<div class="space-y-4 border-l-2 border-secondary-container pl-4">
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                            A primary neoplastic lesion is identified in the right upper lobe, measuring <span class="text-primary font-bold">4.2cm²</span>. The Gemini-LLM synthesis indicates high structural irregularity and heterogeneous texture, consistent with accelerated mitotic activity.
+                        </p>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                            Multi-modal analysis confirms <span class="text-secondary font-semibold">moderate vascularization</span> with peripheral recruitment. While no immediate lymphatic involvement is detected via AI segmentation, the morphological profile suggests a high-grade classification. Differential diagnosis emphasizes adenocarcinoma with cystic transformation.
+                        </p>
+<div class="bg-surface-container-low p-3 rounded-lg border border-outline-variant/30 italic font-body-sm text-body-sm text-on-surface-variant">
+                            "Recommendation: Immediate histopathological correlation is advised. AI-Confidence level: 98.4% based on 1.2M historical comparative datasets."
+                        </div>
+</div>
+</section>
+<!-- Imaging & Biomarker Visuals -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-gutter">
+<div class="bg-surface-container-highest rounded-xl overflow-hidden border border-outline-variant aspect-square group relative">
+<img class="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 transition-all duration-500" data-alt="High-resolution medical imaging scan of a thoracic region featuring a highlighted tumor area in high-contrast cyan against a deep slate background. The aesthetic is clinical and precise, resembling a professional diagnostic workstation display with subtle grid overlays and digital measurement annotations. Soft cinematic lighting highlights the anatomical structures with industrial sophistication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZNcbk11U_XA1v-aEqwnYIh9AgC3P3eHU8gdH_EHUxsK6mCh-S4WjjBfI3idGebJLIcMtJV2ss7jwWeGUYq1JFphPEqJw5jjHE47PEdhz_VzpgbH-kriG9OFMxoUy7mCRh6a7Gjb4-Levwjm7VTS0p-41bmCiuDDLHDd4oxd0GXl1wz_rVR-3xV_-QYB2LruUlczKPHTtYfgVwxXmAbIX-CS2PWgv_jPdc1LO5Qe6e-7LC6_Z0pROiXfxZM2kzRwZkZ2k2RVMjVE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-primary/20 text-primary border border-primary/50 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest">T1-WEIGHTED MRI</span>
+</div>
+</div>
+<div class="grid grid-rows-2 gap-gutter">
+<div class="bg-surface-container rounded-xl p-4 border border-outline-variant flex flex-col justify-between">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant uppercase">Tumor Texture Map</h4>
+<div class="h-24 w-full bg-surface-container-lowest rounded overflow-hidden relative">
+
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-data-mono text-data-mono text-xs">GRANULARITY INDEX</span>
+<span class="font-data-mono text-data-mono text-primary">0.82</span>
+</div>
+</div>
+<div class="bg-surface-container rounded-xl p-4 border border-outline-variant flex flex-col justify-between">
+<h4 class="font-label-caps text-label-caps text-on-surface-variant uppercase">Metabolic Activity</h4>
+<div class="flex items-end gap-1 h-12">
+<div class="w-full bg-primary/20 rounded-t h-[30%]"></div>
+<div class="w-full bg-primary/40 rounded-t h-[50%]"></div>
+<div class="w-full bg-primary/60 rounded-t h-[85%]"></div>
+<div class="w-full bg-primary/80 rounded-t h-[65%]"></div>
+<div class="w-full bg-primary rounded-t h-[95%]"></div>
+<div class="w-full bg-primary/50 rounded-t h-[40%]"></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-data-mono text-data-mono text-xs">SUV PEAK</span>
+<span class="font-data-mono text-data-mono text-primary">12.4 MBq/mL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Biomarkers & Risk -->
+<div class="md:col-span-5 flex flex-col gap-gutter">
+<!-- Risk Stratification -->
+<section class="bg-surface-container-high rounded-xl p-container-padding border border-outline-variant shadow-xl shadow-black/20">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Risk Stratification</h3>
+<span class="bg-error-container text-on-error-container font-label-caps text-label-caps px-3 py-1 rounded-full border border-error/20">HIGH RISK</span>
+</div>
+<div class="relative pt-1">
+<div class="flex mb-2 items-center justify-between">
+<div>
+<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-on-surface-variant bg-surface-container">
+                                    Malignancy Probability
+                                </span>
+</div>
+<div class="text-right">
+<span class="text-xs font-semibold inline-block text-error">
+                                    89.2%
+                                </span>
+</div>
+</div>
+<div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-surface-container-lowest">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary" style="width:10%"></div>
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-tertiary" style="width:25%"></div>
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-error" style="width:54.2%"></div>
+</div>
+<div class="flex justify-between font-label-caps text-[9px] text-on-surface-variant uppercase">
+<span>Benign</span>
+<span>Atypical</span>
+<span>Malignant</span>
+</div>
+</div>
+</section>
+<!-- Biomarker Panel -->
+<section class="bg-surface-container rounded-xl p-container-padding border border-outline-variant">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Biomarker Panel</h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="crop_free">crop_free</span>
+<span class="font-body-md text-body-md">Tumor Area</span>
+</div>
+<span class="font-data-mono text-data-mono text-primary">4.2cm²</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="polyline">polyline</span>
+<span class="font-body-md text-body-md">Shape Irregularity</span>
+</div>
+<span class="font-data-mono text-data-mono text-error">High</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-lg" data-icon="fluid_med">fluid_med</span>
+<span class="font-body-md text-body-md">Vascularization</span>
+</div>
+<span class="font-data-mono text-data-mono text-on-surface">Moderate</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim text-lg" data-icon="texture">texture</span>
+<span class="font-body-md text-body-md">Texture Entropy</span>
+</div>
+<span class="font-data-mono text-data-mono text-primary">3.88</span>
+</div>
+</div>
+</section>
+<!-- Doctor's Notes -->
+<section class="bg-surface-container rounded-xl p-container-padding border border-outline-variant flex-grow">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Doctor's Clinical Notes</h3>
+<textarea class="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg p-3 font-body-md text-body-md min-h-[120px] mb-4 text-on-surface placeholder:text-on-surface-variant/40" placeholder="Enter clinical observations or modifications to AI findings..."></textarea>
+<div class="border-t border-outline-variant pt-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a medical doctor in a modern clinical setting, featuring soft studio lighting and a clean, high-tech background. The doctor has an expression of authoritative expertise and is wearing a crisp white laboratory coat. The color palette is composed of soft slates and clinical whites, creating a trustworthy and sophisticated medical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPd4zbimOGGsmeBRDGTlQqHD9xYxuP6cvkdlOHR2Iwhq-y2n-4Iqt1UbJlHJOGVmjOuE5ce-OF1NcdxjWOvAsmGwyXKWKVdfTvqJgQoJvObUKdr29WUtC-xKQKNVyfNcprDsrirTbM_IAuwDkggNxdJARFwOBYk323RMOwym5fXWJ-accFHHW9jFqWUxqQuCImWTD4vhuvjq_Rgi6ZdFoZkoUOOMZVFvzcBL25r7-E685rm89F0WZpllTvvkyPLLa14228cpKOR04"/>
+</div>
+<div>
+<p class="font-label-caps text-[10px] text-on-surface-variant leading-none">SIGNED BY</p>
+<p class="font-body-sm font-semibold text-on-surface">Dr. Sarah Jenkins, MD</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-data-mono text-xs text-primary/80 italic mb-1">e-Signature: SJ-90210-AUTH</div>
+<div class="h-[1px] w-32 bg-primary ml-auto"></div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Disclaimer -->
+<footer class="mt-8 p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-tertiary text-lg mt-0.5" data-icon="info">info</span>
+<p class="font-body-sm text-[11px] text-on-tertiary-fixed-variant leading-normal uppercase tracking-wider">
+<strong class="text-on-surface">Mandatory Disclaimer:</strong> This report is generated by the PrognosAI-X diagnostic engine as a decision-support tool. It is NOT a final clinical diagnosis. All findings and AI-generated summaries must be reviewed, validated, and finalized by a licensed radiologist or oncologist before any clinical interventions. PrognosAI-X does not accept liability for diagnostic decisions made solely based on these automated insights.
+                </p>
+</div>
+</footer>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center h-20 pb-safe px-4 bg-surface-container dark:bg-surface-container border-t border-outline-variant dark:border-outline-variant rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="font-label-caps text-label-caps">Workstation</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-bright dark:hover:bg-surface-bright active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const icon = this.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    icon.style.transform = 'scale(1.2)';
+                    setTimeout(() => icon.style.transform = 'scale(1)', 200);
+                }
+            });
+        });
+
+        // Simulating AI report loading state on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const summary = document.querySelector('section.bg-surface-container');
+            summary.classList.add('opacity-0');
+            setTimeout(() => {
+                summary.style.transition = 'opacity 1s ease-out, transform 0.8s ease-out';
+                summary.classList.remove('opacity-0');
+            }, 300);
+        });
+    </script>
+</body></html>

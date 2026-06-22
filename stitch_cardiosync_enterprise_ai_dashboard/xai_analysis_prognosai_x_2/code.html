@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrognosAI-X | Diagnostic XAI Module</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#004e5c",
+                    "error": "#ffb4ab",
+                    "tertiary-container": "#a4a7a9",
+                    "surface": "#0b1326",
+                    "surface-container-highest": "#2d3449",
+                    "inverse-on-surface": "#283044",
+                    "secondary-fixed": "#f0dbff",
+                    "on-secondary-fixed-variant": "#6900b3",
+                    "tertiary-fixed": "#e0e3e5",
+                    "error-container": "#93000a",
+                    "surface-bright": "#31394d",
+                    "surface-variant": "#2d3449",
+                    "on-primary-container": "#00424f",
+                    "on-primary": "#003640",
+                    "background": "#0b1326",
+                    "on-tertiary": "#2d3133",
+                    "on-secondary-fixed": "#2c0051",
+                    "inverse-surface": "#dae2fd",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-container": "#d6a9ff",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "primary-fixed-dim": "#4cd7f6",
+                    "tertiary": "#c4c7c9",
+                    "on-primary-fixed": "#001f26",
+                    "surface-container-high": "#222a3d",
+                    "secondary-fixed-dim": "#ddb7ff",
+                    "outline-variant": "#3d494c",
+                    "primary": "#4cd7f6",
+                    "on-tertiary-fixed": "#191c1e",
+                    "on-secondary": "#490080",
+                    "surface-container": "#171f33",
+                    "surface-container-low": "#131b2e",
+                    "secondary-container": "#6f00be",
+                    "on-surface": "#dae2fd",
+                    "surface-container-lowest": "#060e20",
+                    "primary-fixed": "#acedff",
+                    "on-surface-variant": "#bcc9cd",
+                    "on-background": "#dae2fd",
+                    "surface-tint": "#4cd7f6",
+                    "inverse-primary": "#00687a",
+                    "primary-container": "#06b6d4",
+                    "outline": "#869397",
+                    "surface-dim": "#0b1326",
+                    "secondary": "#ddb7ff",
+                    "on-tertiary-container": "#393d3e",
+                    "on-error": "#690005"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "12px",
+                    "container-padding": "16px",
+                    "unit": "4px",
+                    "density-high": "4px",
+                    "component-gap": "8px",
+                    "density-standard": "12px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Geist"],
+                    "data-mono": ["Geist"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "data-mono": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .gradient-scan {
+            background: linear-gradient(to bottom, transparent 0%, #4cd7f6 50%, transparent 100%);
+            height: 2px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .ai-pulse {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(111, 0, 190, 0); }
+            50% { box-shadow: 0 0 15px 2px rgba(111, 0, 190, 0.4); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md overflow-hidden selection:bg-primary/30">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full h-16 flex justify-between items-center px-container-padding z-[100] bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-component-gap">
+<span class="material-symbols-outlined text-primary font-headline-md">clinical_notes</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">PrognosAI-X</span>
+</div>
+<div class="flex items-center gap-gutter">
+<div class="hidden md:flex gap-6 items-center">
+<button class="font-label-caps text-label-caps text-primary hover:text-primary transition-colors cursor-pointer">Workstation</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Analysis</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Reports</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Analytics</button>
+</div>
+<span class="px-3 py-1 bg-primary-container text-on-primary-container text-label-caps font-label-caps rounded-full ai-pulse">SYSTEM: ACTIVE</span>
+</div>
+</header>
+<!-- Side Navigation Drawer (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex-col bg-surface-container-low border-r border-outline-variant z-40">
+<div class="p-container-padding border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest border border-outline">
+<img class="w-full h-full object-cover" data-alt="A professional close-up portrait of a medical researcher in a high-tech lab environment. The subject is wearing a clinical white coat and looking directly at the camera with an expression of expertise. The lighting is cold and clinical, with blue and teal accents, following a modern medical workstation aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfuJEJ5E6VWsXD11uAzmly3KiX51jV5IiqhISn_beOa4RAurSjW2rCArV4UmmaejNKyD-7MSiQH3dqmnNzpwjtVwvdzgVR_JXxoFXBhv_N25NHDzCyukIGfDD9iW3-IYSePfPwaop1ufCFGfVCUuzkOytWXoFZ_acccDYjNrqPxNXY5triQQC95D9ie7aDniDyAB6xRrVrM64SSfF_xfp164zKFzKOyAQr-biI86EB2vhN1u9VBp4wW_NkFtUhDjkdpd1hztznU5Q"/>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-primary">Dr. Aris Thorne</span>
+<span class="font-body-sm text-on-surface-variant">Neuro-Radiology Unit</span>
+<span class="font-label-caps text-[10px] text-primary/60">Node 04-B</span>
+</div>
+</div>
+</div>
+<nav class="flex-1 py-4">
+<div class="px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-primary font-bold border-r-2 border-primary bg-primary-container/10 transition-all" href="#">
+<span class="material-symbols-outlined">view_in_ar</span>
+<span class="font-body-md">Workstation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-body-md">Analysis</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-body-md">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-md">Analytics</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 mt-16 h-[calc(100vh-64px)] overflow-y-auto bg-surface relative p-container-padding pb-24 md:pb-container-padding">
+<!-- Dashboard Grid -->
+<div class="max-w-7xl mx-auto grid grid-cols-12 gap-gutter">
+<!-- Left Column: Primary Image & Prediction -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-gutter">
+<!-- Primary Image Viewport -->
+<div class="relative aspect-square md:aspect-video bg-black rounded-lg border border-outline-variant overflow-hidden group">
+<div class="absolute inset-0 z-10 flex items-center justify-center">
+<!-- MRI Image with Heatmap -->
+<div class="relative w-full h-full">
+<img class="w-full h-full object-contain" data-alt="A high-resolution axial MRI slice of a human brain featuring a prominent glioblastoma multiforme lesion. A Grad-CAM++ heatmap overlay is visible as vibrant, semi-transparent glows of red, orange, and yellow concentrated around the lesion's necrotic core and peripheral edema. The aesthetic is ultra-clinical, high-contrast, and professional dark-mode medical software." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIuzeTLlOXxTk-1gFXfQbIuJOrUN8g9lXzgMXguBOCuFW2v-sPDrDnHLRmQVJUjtBDWEbuFbwJ8gAO-24TYEiIu6DSA9zgHhyKF9CsNtsWdaVXrM6NLqe15omWWv4ymieTADTso-ssbuvQ8dosufbSdhrqciv36cwAj3LUkKQlc5bZKddw6D6xjKGG-sncy9C64bcTY_yWc2k_ahNhGNFAeTbX7JimvwpPRl5pBzjzWKDCxd_dDg-yrlQElyLFLN58eNIrbAmQMEk"/>
+<!-- Scanning Effect -->
+<div class="gradient-scan"></div>
+<!-- Diagnostic Overlays -->
+<div class="absolute top-4 left-4 glass-panel p-2 rounded border border-white/10 flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-primary/80 uppercase">MRI T1-Contrast</span>
+<span class="font-data-mono text-data-mono text-white">Slice 142/256</span>
+</div>
+<div class="absolute bottom-4 right-4 glass-panel px-3 py-2 rounded border border-white/10 flex items-center gap-3">
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-on-surface-variant">FOCUS QUALITY</span>
+<span class="font-data-mono text-data-mono text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Correct Focus
+                                    </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Prediction & Feature Relevance Bento -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Primary Prediction Card -->
+<div class="bg-surface-container-low p-density-standard rounded-lg border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">PRIMARY PREDICTION</span>
+<span class="bg-error-container text-on-error-container text-[10px] font-bold px-2 py-0.5 rounded-full">HIGH RISK</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-white mb-1">Glioblastoma Multiforme</h2>
+<p class="font-body-sm text-on-surface-variant">High Grade Glioma - WHO Grade IV</p>
+</div>
+<div class="mt-4">
+<div class="flex justify-between items-end mb-1">
+<span class="font-data-mono text-data-mono text-primary">CONFIDENCE SCORE</span>
+<span class="font-display-lg text-headline-md text-primary">98.4%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 98.4%"></div>
+</div>
+</div>
+</div>
+<!-- Feature Relevance Card -->
+<div class="bg-surface-container-low p-density-standard rounded-lg border border-outline-variant">
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-4">FEATURE RELEVANCE</span>
+<div class="space-y-4">
+<!-- Vascularity -->
+<div class="space-y-1">
+<div class="flex justify-between font-data-mono text-body-sm">
+<span class="text-on-surface">Vascularity</span>
+<span class="text-primary">88%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-primary" style="width: 88%"></div>
+</div>
+</div>
+<!-- Tissue Density -->
+<div class="space-y-1">
+<div class="flex justify-between font-data-mono text-body-sm">
+<span class="text-on-surface">Tissue Density</span>
+<span class="text-primary">74%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-primary" style="width: 74%"></div>
+</div>
+</div>
+<!-- Necrosis Index -->
+<div class="space-y-1">
+<div class="flex justify-between font-data-mono text-body-sm">
+<span class="text-on-surface">Necrosis Index</span>
+<span class="text-secondary">92%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-secondary" style="width: 92%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Insights & Metrics -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<!-- Explainability Insights -->
+<div class="bg-surface-container-low p-density-standard rounded-lg border border-outline-variant flex-1">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary-fixed-dim">auto_awesome</span>
+<h3 class="font-headline-sm text-headline-sm text-secondary-fixed-dim">Explainability Insights</h3>
+</div>
+<div class="bg-surface-container-highest/30 p-3 rounded border-l-2 border-secondary-container mb-4">
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                            Grad-CAM analysis confirms model attention is primarily focused on the <span class="text-white font-bold">hyper-intense necrotic core</span> and irregular contrast enhancement of the peripheral margin. 
+                        </p>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-6">
+                        Strong correlation detected between T1-weighted peripheral hyper-intensity and prediction weighting. The AI's focus aligns with radiologic criteria for high-grade invasive gliomas.
+                    </p>
+<button class="w-full py-3 bg-secondary-container text-white font-bold rounded-lg ai-pulse flex items-center justify-center gap-2 hover:bg-on-secondary-fixed-variant transition-colors">
+<span class="material-symbols-outlined">psychology_alt</span>
+                        GENERATE CLINICAL REPORT
+                    </button>
+</div>
+<!-- Multi-Model Comparison -->
+<div class="bg-surface-container-low p-density-standard rounded-lg border border-outline-variant">
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-3">MULTI-MODEL COMPARISON</span>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant">
+<th class="pb-2 font-label-caps text-label-caps text-on-surface-variant">Architecture</th>
+<th class="pb-2 font-label-caps text-label-caps text-on-surface-variant text-right">AUC</th>
+<th class="pb-2 font-label-caps text-label-caps text-on-surface-variant text-right">Latency</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-body-sm">
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high/50 transition-colors">
+<td class="py-2 text-primary font-bold">ViT-L/16</td>
+<td class="py-2 text-right">0.992</td>
+<td class="py-2 text-right">240ms</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high/50 transition-colors">
+<td class="py-2 text-on-surface">EfficientNetV2-M</td>
+<td class="py-2 text-right">0.984</td>
+<td class="py-2 text-right">180ms</td>
+</tr>
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-2 text-on-surface">MobileNetV3-L</td>
+<td class="py-2 text-right">0.941</td>
+<td class="py-2 text-right">45ms</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Inference Metrics Chart -->
+<div class="bg-surface-container-low p-density-standard rounded-lg border border-outline-variant h-40 flex flex-col">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">WEEKLY INFERENCE LOAD</span>
+<span class="font-data-mono text-[10px] text-primary">NODE_TRAFFIC: HIGH</span>
+</div>
+<div class="flex-1 flex items-end justify-between gap-1 mt-2">
+<!-- Bar chart placeholder -->
+<div class="w-full bg-primary/20 h-[40%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Mon: 450"></div>
+<div class="w-full bg-primary/20 h-[60%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Tue: 680"></div>
+<div class="w-full bg-primary/20 h-[55%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Wed: 590"></div>
+<div class="w-full bg-primary/20 h-[85%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Thu: 920"></div>
+<div class="w-full bg-primary h-[100%] rounded-t-sm ai-pulse cursor-help" title="Fri (Active): 1124"></div>
+<div class="w-full bg-primary/20 h-[30%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Sat: 310"></div>
+<div class="w-full bg-primary/20 h-[20%] rounded-t-sm hover:bg-primary transition-colors cursor-help" title="Sun: 180"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center py-2 bg-surface-container-lowest border-t border-outline-variant">
+<button class="flex flex-col items-center justify-center text-primary active:scale-95 transition-transform">
+<span class="material-symbols-outlined">view_in_ar</span>
+<span class="font-label-caps text-label-caps">Workstation</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-label-caps text-label-caps">Analysis</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-tertiary-fixed-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</button>
+</nav>
+<!-- Floating Action Button Contextual (Suppressed per rules on Details screens, but showing diagnostic toggle) -->
+<div class="fixed bottom-6 right-6 z-50">
+<button class="w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">layers</span>
+</button>
+</div>
+<script>
+        // Simple interactivity for demonstration
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                console.log('Diagnostic Action Triggered: ' + (this.innerText || 'Toggle View'));
+            });
+        });
+
+        // Simulating medical coordinate tracking in the viewport
+        const viewport = document.querySelector('.aspect-square, .aspect-video');
+        if (viewport) {
+            viewport.addEventListener('mousemove', (e) => {
+                const rect = viewport.getBoundingClientRect();
+                const x = Math.round(e.clientX - rect.left);
+                const y = Math.round(e.clientY - rect.top);
+                // Potential display logic for coordinates
+            });
+        }
+    </script>
+</body></html>

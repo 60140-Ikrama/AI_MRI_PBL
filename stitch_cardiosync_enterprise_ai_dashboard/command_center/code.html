@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Clinical Command Center - Patient 882-9411</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .waveform-grid {
+            background-size: 10px 10px, 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            background: rgba(22, 28, 36, 0.7);
+            border: 1px solid rgba(44, 52, 63, 1);
+        }
+        .clinical-glow {
+            box-shadow: 0 0 8px rgba(117, 255, 158, 0.15);
+        }
+        @keyframes sweep {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+        .sweep-bar {
+            animation: sweep 3s linear infinite;
+        }
+    </style>
+<!-- Insert Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#c6e7ff",
+                    "inverse-primary": "#006d35",
+                    "secondary": "#81cfff",
+                    "on-tertiary-fixed": "#1f1732",
+                    "surface-container-highest": "#2f353e",
+                    "inverse-surface": "#dde3ee",
+                    "error-container": "#93000a",
+                    "surface-bright": "#343a42",
+                    "primary": "#75ff9e",
+                    "surface-container-high": "#242a33",
+                    "inverse-on-surface": "#2b3139",
+                    "primary-fixed-dim": "#00e475",
+                    "surface-container-low": "#161c24",
+                    "on-tertiary-container": "#584e6e",
+                    "on-surface-variant": "#bacbb9",
+                    "surface-container-lowest": "#090f16",
+                    "surface-dim": "#0e141c",
+                    "surface-variant": "#2f353e",
+                    "error": "#ffb4ab",
+                    "tertiary-container": "#cfc2e7",
+                    "tertiary-fixed-dim": "#cdc1e5",
+                    "on-secondary-fixed-variant": "#004c6b",
+                    "on-surface": "#dde3ee",
+                    "surface-tint": "#00e475",
+                    "on-primary-fixed": "#00210b",
+                    "on-secondary-container": "#003952",
+                    "on-tertiary": "#342c49",
+                    "on-primary-fixed-variant": "#005226",
+                    "surface": "#0e141c",
+                    "on-secondary-fixed": "#001e2d",
+                    "primary-fixed": "#62ff96",
+                    "on-primary": "#003918",
+                    "outline": "#859585",
+                    "background": "#0e141c",
+                    "on-secondary": "#00344b",
+                    "on-tertiary-fixed-variant": "#4b4260",
+                    "secondary-container": "#00a9e8",
+                    "secondary-fixed-dim": "#81cfff",
+                    "primary-container": "#00e676",
+                    "on-background": "#dde3ee",
+                    "on-error": "#690005",
+                    "on-primary-container": "#00612e",
+                    "tertiary-fixed": "#eaddff",
+                    "outline-variant": "#3b4a3d",
+                    "tertiary": "#ebdfff",
+                    "surface-container": "#1a2028",
+                    "on-error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "data-density-gap": "8px",
+                    "gutter": "16px",
+                    "margin-desktop": "24px",
+                    "unit": "4px",
+                    "margin-mobile": "12px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "vitals-md": ["Inter"],
+                    "vitals-lg": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "vitals-md": ["32px", {"lineHeight": "1", "fontWeight": "700"}],
+                    "vitals-lg": ["48px", {"lineHeight": "1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-dim text-on-surface font-body-md selection:bg-primary/30 selection:text-primary overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="bg-surface-container-high dark:bg-surface-container-high fixed top-0 w-full z-50 border-b border-outline-variant flex justify-between items-center px-gutter h-16">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">monitor_heart</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-primary tracking-widest">PATIENT ID: 882-9411</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-data-mono text-[10px] text-on-surface-variant uppercase">Status: Stable</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary">battery_charging_80</span>
+<span class="font-data-mono text-[12px] text-primary">88%</span>
+</div>
+<button class="bg-error text-on-error font-label-caps text-[10px] px-3 py-1.5 rounded active:scale-95 transition-transform">
+                EMERGENCY
+            </button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-gutter max-w-lg mx-auto space-y-4">
+<!-- Live Waveform Hero -->
+<section class="glass-panel rounded-xl overflow-hidden clinical-glow">
+<div class="flex justify-between items-center px-4 py-2 border-b border-outline-variant/30">
+<span class="font-label-caps text-label-caps text-primary uppercase">ECG Live Feed (Lead II)</span>
+<span class="font-data-mono text-[10px] text-on-surface-variant">25mm/s • 10mm/mV</span>
+</div>
+<div class="h-32 w-full waveform-grid relative bg-surface-container-lowest overflow-hidden">
+<canvas class="w-full h-full" id="ecgCanvas"></canvas>
+<div class="absolute inset-y-0 left-0 w-0.5 bg-primary/40 sweep-bar"></div>
+</div>
+</section>
+<!-- High-Density Vital Cards Grid -->
+<section class="grid grid-cols-2 gap-3">
+<!-- HR -->
+<div class="glass-panel p-3 rounded-xl clinical-glow">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">HR</span>
+<span class="material-symbols-outlined text-primary text-[18px]">favorite</span>
+</div>
+<div class="mt-1 flex items-baseline gap-1">
+<span class="font-vitals-lg text-vitals-lg text-primary">72</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">BPM</span>
+</div>
+<div class="mt-2 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[72%]"></div>
+</div>
+</div>
+<!-- SpO2 -->
+<div class="glass-panel p-3 rounded-xl border-l-2 border-l-primary/50">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">SpO2</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">air</span>
+</div>
+<div class="mt-1 flex items-baseline gap-1">
+<span class="font-vitals-lg text-vitals-lg text-on-surface">98</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">%</span>
+</div>
+<div class="mt-2 text-[10px] font-data-mono text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> STABLE
+                </div>
+</div>
+<!-- BP -->
+<div class="glass-panel p-3 rounded-xl">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">BP</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">blood_pressure</span>
+</div>
+<div class="mt-1 flex items-baseline gap-1">
+<span class="font-vitals-md text-vitals-md text-on-surface">120/80</span>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant mt-1 block">SYS/DIA mmHg</span>
+</div>
+<!-- HRV -->
+<div class="glass-panel p-3 rounded-xl">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">HRV</span>
+<span class="material-symbols-outlined text-tertiary text-[18px]">analytics</span>
+</div>
+<div class="mt-1 flex items-baseline gap-1">
+<span class="font-vitals-md text-vitals-md text-on-surface">65</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">ms</span>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant mt-1 block">R-R VARIANCE</span>
+</div>
+</section>
+<!-- Stress Widget -->
+<section class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-primary">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">Stress Index</span>
+<span class="font-headline-sm text-headline-sm text-primary">LOW</span>
+</div>
+<div class="flex gap-1 h-6 items-end">
+<div class="w-2 h-2 bg-primary rounded-sm"></div>
+<div class="w-2 h-3 bg-primary/40 rounded-sm"></div>
+<div class="w-2 h-1 bg-primary/40 rounded-sm"></div>
+<div class="w-2 h-4 bg-primary/40 rounded-sm"></div>
+</div>
+</section>
+<!-- AI Summary Widget -->
+<section class="bg-surface-container-low p-4 rounded-xl border border-outline-variant relative overflow-hidden">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<h3 class="font-label-caps text-label-caps text-secondary tracking-wider">AI ANALYSIS</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                Normal Sinus Rhythm. No anomalies detected in the last 4 hours. <span class="text-primary font-semibold">Low risk of AFib.</span> Baseline vitals maintained.
+            </p>
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-[64px]">query_stats</span>
+</div>
+</section>
+<!-- Patient Queue & Timeline Header -->
+<div class="flex justify-between items-center mt-6 mb-2">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Recent Activity</h2>
+<button class="text-primary font-label-caps text-[11px] flex items-center gap-1">
+                VIEW LOG <span class="material-symbols-outlined text-[14px]">arrow_forward_ios</span>
+</button>
+</div>
+<!-- Activity Timeline -->
+<section class="space-y-3">
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+<div class="w-[1px] h-full bg-outline-variant"></div>
+</div>
+<div class="pb-4">
+<span class="font-data-mono text-[12px] text-on-surface-variant">08:15</span>
+<p class="font-body-md text-[14px] text-on-surface">ECG Sync &amp; Calibration Completed</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-secondary-container mt-2"></div>
+<div class="w-[1px] h-full bg-outline-variant opacity-30"></div>
+</div>
+<div class="pb-4">
+<span class="font-data-mono text-[12px] text-on-surface-variant">07:30</span>
+<p class="font-body-md text-[14px] text-on-surface">Medication Administered (Beta-Blocker)</p>
+</div>
+</div>
+</section>
+<!-- Secondary Actions -->
+<section class="grid grid-cols-1 gap-3 pt-2">
+<button class="w-full h-12 glass-panel flex items-center justify-center gap-2 hover:bg-surface-bright active:scale-[0.98] transition-all rounded-lg">
+<span class="material-symbols-outlined text-on-surface-variant">group</span>
+<span class="font-label-caps text-label-caps text-on-surface">Patient Queue (12)</span>
+</button>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="bg-surface-dim fixed bottom-0 w-full z-50 border-t border-outline-variant h-20 flex justify-around items-center px-2 pb-safe">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1.5 shadow-[0_0_8px_rgba(0,230,118,0.3)] active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-caps text-label-caps mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+<span class="font-label-caps text-label-caps mt-1">Acquisition</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-label-caps text-label-caps mt-1">Analysis</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-caps text-label-caps mt-1">AI</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-caps text-label-caps mt-1">Records</span>
+</a>
+</nav>
+<script>
+        // Simple ECG Simulation
+        const canvas = document.getElementById('ecgCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+
+        let x = 0;
+        let points = [];
+        const step = 2;
+        const amplitude = 30;
+        
+        function drawECG() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid is CSS background, so we just draw the line
+            ctx.beginPath();
+            ctx.strokeStyle = '#75ff9e';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#75ff9e';
+            
+            let time = Date.now() / 1000;
+            
+            for (let i = 0; i < canvas.width; i += step) {
+                let y = canvas.height / 2;
+                
+                // Simulate P-QRS-T complex
+                let phase = (i + time * 150) % 200;
+                
+                if (phase > 40 && phase < 45) { // P Wave
+                    y -= Math.sin((phase-40)/5 * Math.PI) * 5;
+                } else if (phase > 60 && phase < 65) { // Q Wave
+                    y += 5;
+                } else if (phase >= 65 && phase < 70) { // R Wave
+                    y -= 40;
+                } else if (phase >= 70 && phase < 75) { // S Wave
+                    y += 10;
+                } else if (phase > 100 && phase < 130) { // T Wave
+                    y -= Math.sin((phase-100)/30 * Math.PI) * 8;
+                }
+                
+                // Add some jitter
+                y += (Math.random() - 0.5) * 2;
+
+                if (i === 0) ctx.moveTo(i, y);
+                else ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+            
+            requestAnimationFrame(drawECG);
+        }
+        
+        drawECG();
+    </script>
+</body></html>
