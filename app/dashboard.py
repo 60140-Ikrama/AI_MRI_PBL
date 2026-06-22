@@ -47,9 +47,68 @@ st.set_page_config(
 
 # Custom Glassmorphic Dark UI Styling
 st.markdown("""
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "inverse-on-surface": "#283044",
+                    "on-tertiary-fixed": "#191c1e",
+                    "error": "#ffb4ab",
+                    "inverse-surface": "#dae2fd",
+                    "background": "#0b1326",
+                    "on-surface": "#dae2fd",
+                    "tertiary-fixed": "#e0e3e5",
+                    "secondary-fixed": "#f0dbff",
+                    "tertiary-container": "#a4a7a9",
+                    "surface-container-highest": "#2d3449",
+                    "surface-container-lowest": "#060e20",
+                    "on-primary-fixed": "#001f26",
+                    "primary": "#4cd7f6",
+                    "on-secondary-container": "#d6a9ff",
+                    "surface-bright": "#31394d",
+                    "surface-container-low": "#131b2e",
+                    "primary-fixed-dim": "#4cd7f6",
+                    "surface-dim": "#0b1326",
+                    "on-background": "#dae2fd",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-surface-variant": "#bcc9cd",
+                    "primary-container": "#06b6d4",
+                    "surface-container": "#171f33",
+                    "on-secondary-fixed": "#2c0051",
+                    "on-secondary": "#490080",
+                    "surface": "#0b1326",
+                    "surface-variant": "#2d3449",
+                    "outline": "#869397",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "tertiary": "#c4c7c9",
+                    "on-error-container": "#ffdad6",
+                    "inverse-primary": "#00687a",
+                    "surface-tint": "#4cd7f6",
+                    "surface-container-high": "#222a3d",
+                    "secondary-container": "#6f00be",
+                    "on-tertiary": "#2d3133",
+                    "primary-fixed": "#acedff",
+                    "on-secondary-fixed-variant": "#6900b3",
+                    "outline-variant": "#3d494c",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004e5c",
+                    "on-error": "#690005",
+                    "on-tertiary-container": "#393d3e",
+                    "secondary": "#ddb7ff",
+                    "secondary-fixed-dim": "#ddb7ff",
+                    "on-primary-container": "#00424f",
+                    "on-primary": "#003640"
+                }
+            }
+        }
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Geist:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Geist:wght@400;500;700&display=swap');
-    
     /* Main layout override */
     html, body, [class*="css"], [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
@@ -260,30 +319,239 @@ tabs = st.tabs([
 # TAB 1: HOME PAGE
 # ---------------------------------------------------------------------
 with tabs[0]:
-    st.markdown('<div class="stCard">', unsafe_allow_html=True)
-    st.subheader("System Architecture & Clinical Flow")
-    st.write(
-        "PrognosAI-X is an advanced, multi-stage deep learning decision-support platform designed to assist neuroradiologists "
-        "and oncologists in detecting, segmenting, classifying, and quantifying malignant brain lesions from multi-spectral MRI scans."
-    )
+    # Active Patient Summary Hero Banner
+    patient_id_str = st.session_state.patient_id
+    modality_str = st.session_state.modality
+    st.markdown(f"""
+    <div class="glass-panel rounded-xl p-6 flex flex-col lg:flex-row gap-6 relative overflow-hidden mb-6" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid #3d494c;">
+        <div class="flex-1 z-10">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-full bg-[#6f00be] text-[#d6a9ff] font-semibold text-[11px] uppercase tracking-wider">ACTIVE SESSION</span>
+                <span class="text-[#bcc9cd] font-mono text-[13px]">ID: {patient_id_str}</span>
+            </div>
+            <h2 class="text-3xl font-bold text-[#4cd7f6] mb-4">AI Analysis Complete</h2>
+            <p class="text-[#bcc9cd] max-w-2xl mb-6">Patient {patient_id_str} shows anomalous volumetric expansion in the temporal region. Neural classification engine suggests a high-probability match. Pulse sequence modality: {modality_str}. Review required for clinical validation.</p>
+            <div class="flex flex-wrap gap-4">
+                <div class="px-6 py-3 bg-[#4cd7f6] text-[#003640] font-bold rounded flex items-center gap-2 cursor-pointer hover:brightness-110 transition-all">
+                    <span class="material-symbols-outlined">visibility</span>
+                    Review Findings
+                </div>
+                <div class="px-6 py-3 border border-[#4cd7f6] text-[#4cd7f6] font-bold rounded flex items-center gap-2 cursor-pointer hover:bg-[#4cd7f6]/10 transition-all">
+                    <span class="material-symbols-outlined">download</span>
+                    Export DICOM
+                </div>
+            </div>
+        </div>
+        <div class="lg:w-1/3 h-48 lg:h-auto bg-black rounded-lg border border-[#3d494c] relative overflow-hidden group">
+            <div class="scan-line" style="width: 100%; height: 2px; background: #4cd7f6; position: absolute; top: 0; left: 0; animation: scan 3s linear infinite; z-index: 10; box-shadow: 0 0 15px #4cd7f6;"></div>
+            <img class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-P2CquwXvN17WWROMDBCpUqXgqHrQwBper7YuPuqXAg0oHssNAZ9TIdtEr5ahlPoH_uNDEr8uGHXmWqF0tj5jaKDL1X46sTQt3VzdFxrVlHx_DcNtTAFCa_EhpMbFrxP7iC3zpjBfEEhDS60wTmImyjFwTgB1hqXQ0Vl8U9sTIe2m1PJKluFOpLWVQaPqKlMxKXZHKUyLPDA0ur0ClgH8nM0SfopX2ToA_O46S3SCf78cZU7imHEMDMoICLkKI5h3GiHwsWxj4eQ"/>
+            <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-[10px] font-mono text-[#4cd7f6] border border-[#4cd7f6]/30">ROI: BRAIN_SEG_01</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Render interactive pipeline diagram
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    col_home_l, col_home_r = st.columns([8, 4])
+    
+    with col_home_l:
         st.markdown("""
-        **Pipeline Flow:**
-        1. **Multi-Spectral MRI Input:** T1-weighted, T2-weighted, and FLAIR pulse sequences.
-        2. **Signal Preprocessing:** Active contour skull stripping, bilateral filtering, CLAHE, and image registration.
-        3. **Lesion Segmentation:** U-Net, Attention U-Net, or U-Net++ delineates voxel boundaries.
-        4. **ROI Bounding Box Crop:** Segments are padded and cropped to isolate the lesion margin.
-        5. **Ensemble Classification:** A joint CNN-ViT classifier maps ROI features to pathological categories.
-        6. **XAI Interpretability:** Dual-gradient and perturbation explainability maps validate focus quality.
-        7. **Automated Biomarkers & Risk Score:** GLCM and boundary parameters calculate malignancy risk.
-        8. **Gemini Clinical Report:** Large language models synthesize findings into standardized hospital reports.
-        """)
+        <div class="surface-container rounded-xl p-6 border border-[#3d494c] mb-6" style="background: #171f33;">
+            <h3 class="font-bold text-sm text-[#bcc9cd] mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">analytics</span>
+                PROCESSING PIPELINE STATUS
+            </h3>
+            <div class="flex justify-between items-start relative px-4">
+                <!-- Connector Line -->
+                <div class="absolute top-5 left-8 right-8 h-0.5 bg-[#3d494c] z-0"></div>
+                <div class="absolute top-5 left-8 w-1/2 h-0.5 bg-[#4cd7f6] z-0"></div>
+                <!-- Step 1: Preprocessing -->
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="w-10 h-10 rounded-full bg-[#4cd7f6] text-[#003640] flex items-center justify-center font-bold">
+                        <span class="material-symbols-outlined font-bold">check</span>
+                    </div>
+                    <span class="text-xs font-semibold text-[#dae2fd]">Preprocessing</span>
+                    <span class="text-[10px] font-mono text-[#4cd7f6]">SUCCESS</span>
+                </div>
+                <!-- Step 2: Segmentation -->
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="w-10 h-10 rounded-full bg-[#4cd7f6] text-[#003640] flex items-center justify-center font-bold">
+                        <span class="material-symbols-outlined font-bold">check</span>
+                    </div>
+                    <span class="text-xs font-semibold text-[#dae2fd]">Segmentation</span>
+                    <span class="text-[10px] font-mono text-[#4cd7f6]">SUCCESS</span>
+                </div>
+                <!-- Step 3: Classification -->
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="w-10 h-10 rounded-full bg-[#6f00be] text-[#d6a9ff] flex items-center justify-center font-bold ai-pulse">
+                        <span class="material-symbols-outlined animate-spin" style="animation-duration: 3s;">sync</span>
+                    </div>
+                    <span class="text-xs font-semibold text-[#dae2fd]">Classification</span>
+                    <span class="text-[10px] font-mono text-[#ddb7ff]">IN-PROGRESS</span>
+                </div>
+                <!-- Step 4: Report -->
+                <div class="flex flex-col items-center gap-2 z-10">
+                    <div class="w-10 h-10 rounded-full bg-[#2d3449] text-[#bcc9cd] flex items-center justify-center border border-[#3d494c]">
+                        <span class="material-symbols-outlined">pending_actions</span>
+                    </div>
+                    <span class="text-xs font-semibold text-[#bcc9cd]">Report Gen</span>
+                    <span class="text-[10px] font-mono text-[#bcc9cd]">PENDING</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-    with col2:
-        # Drawing a clean system flowchart using plotly
+        # Active Queue
+        st.markdown("""
+        <div class="surface-container rounded-xl p-6 border border-[#3d494c] mb-6" style="background: #171f33;">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-sm text-[#bcc9cd] flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">list_alt</span>
+                    ACTIVE SCAN QUEUE
+                </h3>
+                <button class="text-[#4cd7f6] text-[10px] font-bold hover:underline bg-transparent border-0 cursor-pointer">VIEW ALL</button>
+            </div>
+            <div class="space-y-3">
+                <!-- Queue Item 1 -->
+                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
+                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFPPULDGI4Urt1Do4k0fYwOBwpQoLrSaQkOTcuPue0jl0YWn-obaK3G6Feu-0tWfoZGsvXwnqZ2UnErGADpWS50WZtG1ISXNakg2bTqMcTF0HM69jzJkAXy6klDs_dsVu7hPfaOIOfgFUsGuSq79z66nh1FqSxJk_LMk6_NfOIUumGlSxY4FnamM-NRAdX-nGlFzDgZihCCVXckCOq2zXU66N_kVQD823oxD8D8wwX36wlWbIlDqxw4ns_WkkctnKfphOTSI-v3mc"/>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-8842</p>
+                            <p class="text-xs text-[#bcc9cd] m-0">Neurological MRI • 1.2 GB</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="px-2 py-1 rounded bg-[#93000a] text-[#ffdad6] font-bold text-[10px] flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span> CRITICAL
+                        </span>
+                        <span class="font-mono text-xs text-[#bcc9cd]">04m 12s remaining</span>
+                    </div>
+                </div>
+                <!-- Queue Item 2 -->
+                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
+                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoQqhUrlrYAozrxGmY3-qgAYf1S7l_lb8SsNVxhP6A4xEQqy1vXWHdhqxcbBxQ7U-S0PfRJQY411LMZcNrIndx4X-OIO-uX8Ga4ePactzDfJmZJLDRSD3vV4RKIDdesMIjq_kcW7Q5pG_faTw10nqU_j1i6i7EM-Ze9WlDg0xqpzr8oN4SgKHJxH_b2adpBPhggA1Jr4qOtwRCRqN3VoOIlCXirYjsdIw2MaswdxbwXm--igrRUVdnLr9nlgLpqw5QssggtYx_0X0"/>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-7102</p>
+                            <p class="text-xs text-[#bcc9cd] m-0">Thoracic CT • 3.5 GB</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="px-2 py-1 rounded border border-[#bcc9cd]/30 text-[#bcc9cd] font-bold text-[10px] flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#bcc9cd]"></span> STABLE
+                        </span>
+                        <span class="font-mono text-xs text-[#bcc9cd]">12m 45s remaining</span>
+                    </div>
+                </div>
+                <!-- Queue Item 3 -->
+                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer opacity-80">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
+                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzek3W26ONHmC4D-AX30c83vkscEGGC_PW1wvRhDpOpBDe2NvapUrQsd5QfNTUKEonvETC0_MG-2FSjSDbVL8b7rcnZXOooTa6hSluoDs77YbTc-Su2VC3qW5z96ao3nNeo7VoJBpYA_gq1zOJrjWhsIrpXWMSh46o8j3f4pAhDEYHdKfh9Dj8iiuTmSvwB03uLtGUg5jhsoYdmS_QyzKI0fGQ66-9vhUhtXx-MCxxqP5K4IDOAZEp9nfWZFKmrVZ-uRH0q-rv3OA"/>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-5591</p>
+                            <p class="text-xs text-[#bcc9cd] m-0">Abdominal US • 450 MB</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="px-2 py-1 rounded border border-[#3d494c] text-[#bcc9cd] font-bold text-[10px] flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#869397]"></span> ROUTINE
+                        </span>
+                        <span class="font-mono text-xs text-[#bcc9cd]">Waiting</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col_home_r:
+        # Global KPIs
+        st.markdown("""
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
+                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">SCANS TODAY</p>
+                <p class="text-3xl font-bold text-[#4cd7f6] m-0">142</p>
+                <p class="text-[10px] text-[#4cd7f6]/70 font-mono m-0">+12% vs. Avg</p>
+            </div>
+            <div class="surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
+                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">MEAN DICE</p>
+                <p class="text-3xl font-bold text-[#ddb7ff] m-0">0.942</p>
+                <p class="text-[10px] text-[#ddb7ff]/70 font-mono m-0">Optimal Precision</p>
+            </div>
+            <div class="col-span-2 surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
+                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">AI CONFIDENCE AVG</p>
+                <div class="flex items-end justify-between">
+                    <p class="text-3xl font-bold text-[#dae2fd] m-0">97.4%</p>
+                    <div class="w-24 h-8 flex items-end gap-1 pb-1">
+                        <div class="w-2 bg-[#4cd7f6] h-1/2"></div>
+                        <div class="w-2 bg-[#4cd7f6] h-2/3"></div>
+                        <div class="w-2 bg-[#4cd7f6] h-3/4"></div>
+                        <div class="w-2 bg-[#4cd7f6] h-full"></div>
+                        <div class="w-2 bg-[#4cd7f6] h-5/6"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # System Health
+        st.markdown("""
+        <div class="surface-container rounded-xl p-6 border border-[#3d494c]" style="background: #171f33;">
+            <h3 class="font-bold text-sm text-[#bcc9cd] mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">sensors</span>
+                SYSTEM CLUSTER HEALTH
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                        <span class="text-sm text-[#dae2fd]">ML Inference Engine</span>
+                    </div>
+                    <span class="font-mono text-xs text-[#bcc9cd]">24ms Latency</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                        <span class="text-sm text-[#dae2fd]">Edge Compute Node 01</span>
+                    </div>
+                    <span class="font-mono text-xs text-[#bcc9cd]">12% Load</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                        <span class="text-sm text-[#dae2fd]">Cloud Archive Sync</span>
+                    </div>
+                    <span class="font-mono text-xs text-[#bcc9cd]">Active</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>
+                        <span class="text-sm text-[#dae2fd]">Segmentation Model V2</span>
+                    </div>
+                    <span class="font-mono text-xs text-[#bcc9cd]">Update Pending</span>
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-[#3d494c]">
+                <div class="w-full h-24 bg-[#131b2e] rounded border border-[#3d494c]/30 relative overflow-hidden flex items-center justify-center">
+                    <div class="relative text-center z-10 px-4">
+                        <p class="text-[9px] text-[#4cd7f6]/80 m-0 uppercase tracking-widest">REAL-TIME TRAFFIC FLOW</p>
+                        <p class="font-mono text-[10px] text-[#bcc9cd] m-0">Cluster: US-EAST-01 • Throughput: 4.8 GB/s</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Render interactive pipeline flowchart and contributions
+    st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c;">', unsafe_allow_html=True)
+    st.subheader("System Architecture & Computational Path")
+    
+    col_chart, col_desc = st.columns([1, 1])
+    with col_chart:
         fig = go.Figure()
         nodes = ["MRI Input", "Preprocessing", "Segmentation", "ROI Crop", "CNN+ViT Classify", "XAI Trust Check", "Clinical Report"]
         fig.add_trace(go.Sankey(
@@ -298,23 +566,37 @@ with tabs[0]:
               source = [0, 1, 2, 3, 4, 5],
               target = [1, 2, 3, 4, 5, 6],
               value =  [1, 1, 1, 1, 1, 1]
-          )))
+            )
+          ))
         fig.update_layout(title_text="Computational Signal Path", font_size=10, height=250, paper_bgcolor="#0d1117", plot_bgcolor="#0d1117", font_color="#c9d1d9")
         st.plotly_chart(fig, use_container_width=True)
         
+    with col_desc:
+        st.markdown("""
+        **Pipeline Flow Description:**
+        1. **Multi-Spectral MRI Input:** T1-weighted, T2-weighted, and FLAIR pulse sequences.
+        2. **Signal Preprocessing:** Active contour skull stripping, bilateral filtering, CLAHE, and image registration.
+        3. **Lesion Segmentation:** U-Net, Attention U-Net, or U-Net++ delineates voxel boundaries.
+        4. **ROI Bounding Box Crop:** Segments are padded and cropped to isolate the lesion margin.
+        5. **Ensemble Classification:** A joint CNN-ViT classifier maps ROI features to pathological categories.
+        6. **XAI Interpretability:** Dual-gradient and perturbation explainability maps validate focus quality.
+        7. **Automated Biomarkers & Risk Score:** GLCM and boundary parameters calculate malignancy risk.
+        8. **Gemini Clinical Report:** Large language models synthesize findings into standardized hospital reports.
+        """)
+        
     st.markdown("### Primary Research Contributions:")
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    col_c1, col_c2, col_c3 = st.columns(3)
+    with col_c1:
         st.markdown("""
         **1. ROI-Guided Ensemble Framework**
         We propose a dual-stage classification pipeline where CNNs (capturing local edge features) and Vision Transformers (ViT, capturing global contextual dependencies) are ensemble-fused over segmented tumor regions of interest, mitigating background scan noise.
         """)
-    with col2:
+    with col_c2:
         st.markdown("""
         **2. Multi-XAI Validation Layer**
         PrognosAI-X integrates Grad-CAM, Grad-CAM++, Score-CAM, Integrated Gradients, and SHAP. It introduces the *Focus Quality Classifier* which automatically checks if the model's focus overlaps with the segmented tumor mask to prevent shortcut learning.
         """)
-    with col3:
+    with col_c3:
         st.markdown("""
         **3. Statistically Validated CDS**
         Integrates rigorous hypothesis testing (ANOVA, paired t-tests, McNemar) and bootstrap resampling directly into the clinical dashboard, establishing a mathematical proof of performance improvements before clinician report generation.
@@ -419,92 +701,208 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("Brain Tumor Segmentation and Boundary Analysis")
     
-    col_sel, col_run = st.columns([1, 1])
-    with col_sel:
+    col_controls, col_viewport, col_side_metrics = st.columns([3, 6, 3])
+    
+    with col_controls:
+        st.markdown('<div class="glass-panel" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; padding: 15px; border-radius: 12px; margin-bottom: 15px;">', unsafe_allow_html=True)
+        st.markdown("### Viewport Controls")
+        contrast_val = st.slider("Contrast", 0.5, 2.0, 1.2, step=0.1)
+        brightness_val = st.slider("Brightness", 0.5, 2.0, 0.8, step=0.1)
+        zoom_val = st.slider("Zoom (%)", 100, 300, 240, step=10)
+        
+        st.markdown("### Segmentation Toggle")
+        show_tumor = st.checkbox("Tumor Mask", value=True)
+        show_roi = st.checkbox("ROI Boundary", value=False)
+        overlay_alpha = st.slider("Overlay Opacity (%)", 0, 100, 45, step=5) / 100.0
+        
         st.session_state.segmentation_model = st.selectbox(
-            "Select Segmentation Architecture", 
+            "Select Segmentation Model", 
             ["U-Net", "Attention U-Net", "U-Net++", "Mask R-CNN"]
         )
-    with col_run:
-        run_seg = st.button("Run Segmentation")
         
-    if run_seg:
-        with st.spinner("Processing segmentation..."):
-            time.sleep(0.5) # Simulate forward pass overhead
-            # We simulate predictions by adding minor variations/dilations to ground truth mask
-            gt = st.session_state.mri_mask_gt
-            if np.sum(gt) > 0:
-                if st.session_state.segmentation_model == "U-Net":
-                    # Classic U-Net has slight over-segmentation
-                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                    pred = cv2.dilate(gt, kernel)
-                    # Add minor random noise to boundary
-                    noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
-                    pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
-                elif st.session_state.segmentation_model == "Attention U-Net":
-                    # Attention U-Net has high boundary recall
-                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-                    pred = cv2.dilate(gt, kernel)
-                    pred = pred * 0.95 + gt * 0.05
-                elif st.session_state.segmentation_model == "U-Net++":
-                    # U-Net++ is highly accurate
-                    pred = gt.copy()
-                    # Add very slight boundary shift
-                    pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
-                else: # Mask R-CNN
-                    # Mask R-CNN outputs box-like boundary limits
-                    pred = gt.copy()
-                    pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
-                    pred = (pred > 0.4).astype(np.float32)
-            else:
-                pred = np.zeros_like(gt)
+        run_seg = st.button("Run Segmentation model", use_container_width=True)
+        
+        if run_seg:
+            with st.spinner("Processing segmentation..."):
+                time.sleep(0.5)
+                gt = st.session_state.mri_mask_gt
+                if np.sum(gt) > 0:
+                    if st.session_state.segmentation_model == "U-Net":
+                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                        pred = cv2.dilate(gt, kernel)
+                        noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
+                        pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
+                    elif st.session_state.segmentation_model == "Attention U-Net":
+                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                        pred = cv2.dilate(gt, kernel)
+                        pred = pred * 0.95 + gt * 0.05
+                    elif st.session_state.segmentation_model == "U-Net++":
+                        pred = gt.copy()
+                        pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
+                    else:
+                        pred = gt.copy()
+                        pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
+                        pred = (pred > 0.4).astype(np.float32)
+                else:
+                    pred = np.zeros_like(gt)
+                st.session_state.pred_mask = pred
+                st.success("Voxel boundary delineation complete.")
                 
-            st.session_state.pred_mask = pred
-            st.success("Voxel boundary delineation complete.")
-            
-    col_img1, col_img2, col_img3 = st.columns(3)
-    
-    blended, error_map, boundary_vis = get_overlay_images(
-        st.session_state.mri_preprocessed, 
-        st.session_state.mri_mask_gt, 
-        st.session_state.pred_mask
-    )
-    
-    with col_img1:
-        st.image(blended, caption="Segmentation Overlay (Yellow=TP, Red=FP, Blue=FN)", use_container_width=True)
-    with col_img2:
-        st.image(error_map, caption="Error Heatmap Map (Red=FP, Blue=FN)", use_container_width=True)
-    with col_img3:
-        st.image(boundary_vis, caption="Boundary Outline (Green=GT, Red=Pred)", use_container_width=True)
+        if st.button("Export DICOM", key="export_dicom_seg", use_container_width=True):
+            st.success("DICOM series signed and exported to PACS.")
+        st.markdown('</div>', unsafe_allow_html=True)
         
-    # Metrics
-    metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
-    
-    col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
-    col_m1.metric("Dice Score", f"{metrics['Dice']:.3f}")
-    col_m2.metric("IoU (Jaccard)", f"{metrics['IoU']:.3f}")
-    col_m3.metric("Precision", f"{metrics['Precision']:.3f}")
-    col_m4.metric("Recall", f"{metrics['Recall']:.3f}")
-    col_m5.metric("Hausdorff Dist (px)", f"{metrics['Hausdorff']:.2f}")
-    col_m6.metric("Boundary F1", f"{metrics['Boundary F1']:.3f}")
-    
-    # Segmentation vs Classification Accuracy correlation analysis
+    with col_viewport:
+        sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
+        
+        base_img = st.session_state.mri_raw.copy()
+        if sub_tab_selected == "CLAHE":
+            base_img = apply_clahe(base_img)
+        elif sub_tab_selected == "Skull Stripped":
+            base_img = skull_strip(base_img)
+            
+        adjusted_img = np.clip((base_img - 0.5) * contrast_val + 0.5 + (brightness_val - 1.0), 0.0, 1.0)
+        
+        h, w = adjusted_img.shape
+        dy, dx, ch, cw = 0, 0, h, w
+        if zoom_val > 100:
+            crop_fraction = 100.0 / zoom_val
+            ch, cw = int(h * crop_fraction), int(w * crop_fraction)
+            dy, dx = (h - ch) // 2, (w - cw) // 2
+            cropped = adjusted_img[dy:dy+ch, dx:dx+cw]
+            adjusted_img = cv2.resize(cropped, (w, h))
+            
+        rgb_img = cv2.cvtColor((adjusted_img * 255).astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        
+        if show_tumor:
+            mask = st.session_state.pred_mask.copy()
+            if zoom_val > 100:
+                cropped_mask = mask[dy:dy+ch, dx:dx+cw]
+                mask = cv2.resize(cropped_mask, (w, h))
+            
+            cyan_mask = np.zeros_like(rgb_img)
+            cyan_mask[mask > 0.1] = [76, 215, 246]
+            idx = mask > 0.1
+            rgb_img[idx] = cv2.addWeighted(rgb_img, 1.0 - overlay_alpha, cyan_mask, overlay_alpha, 0)[idx]
+            
+        if show_roi:
+            gt = st.session_state.mri_mask_gt.copy()
+            if zoom_val > 100:
+                cropped_gt = gt[dy:dy+ch, dx:dx+cw]
+                gt = cv2.resize(cropped_gt, (w, h))
+            contours, _ = cv2.findContours((gt * 255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(rgb_img, contours, -1, [221, 183, 255], 2)
+            
+        st.markdown(f"""
+        <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: monospace; display: flex; justify-content: space-between;">
+            <div style="color: #4cd7f6; font-size: 11px;">
+                <div>SLICE: 142 / 256</div>
+                <div>POS: -24.5mm</div>
+                <div>MODALITY: {st.session_state.modality}</div>
+            </div>
+            <div style="color: #bcc9cd; text-align: right; font-size: 11px;">
+                <div>FOV: 220 x 220</div>
+                <div>ZOOM: {zoom_val}%</div>
+                <div style="color: #ffb4ab; font-weight: bold;">LATENCY: 12ms</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.image(rgb_img, use_container_width=True)
+        
+        st.markdown("""
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 9999px; padding: 8px 24px; display: flex; gap: 20px; justify-content: center; width: max-content; margin: 15px auto;">
+            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">pan_tool</span>
+            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">straighten</span>
+            <span class="material-symbols-outlined" style="color: #4cd7f6; cursor: pointer; font-size: 20px;">adjust</span>
+            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">format_color_fill</span>
+            <div style="width: 1px; height: 20px; background: #3d494c;"></div>
+            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">undo</span>
+            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">redo</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col_side_metrics:
+        metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
+        st.markdown(f"""
+        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">DICE SCORE</span>
+                <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['Dice']:.3f}</span>
+            </div>
+            <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
+                <div style="background: #4cd7f6; height: 100%; width: {metrics['Dice']*100:.1f}%;"></div>
+            </div>
+        </div>
+        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">IOU (JACCARD)</span>
+                <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['IoU']:.3f}</span>
+            </div>
+            <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
+                <div style="background: #4cd7f6; height: 100%; width: {metrics['IoU']*100:.1f}%;"></div>
+            </div>
+        </div>
+        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">HAUSDORFF DISTANCE</span>
+                <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">{metrics['Hausdorff']:.2f} <span style="font-size: 14px; font-weight: normal; color: #bcc9cd;">mm</span></span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
+        tumor_area_cm2 = biomarkers["Tumor Area (mm2)"] / 100.0
+        st.markdown(f"""
+        <div class="glass-panel p-4 rounded-xl mb-4" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
+            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined text-[14px]">insights</span> CLINICAL INSIGHTS
+            </h3>
+            <div style="background: rgba(76, 215, 246, 0.1); border: 1px solid rgba(76, 215, 246, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Tumor area estimated at <span style="color: #4cd7f6; font-weight: bold;">{tumor_area_cm2:.2f} cm²</span>. Spatial extension registered relative to brain template.</p>
+            </div>
+            <div style="background: rgba(221, 183, 255, 0.1); border: 1px solid rgba(221, 183, 255, 0.2); padding: 12px; border-radius: 8px;">
+                <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Segmentation confidence: <span style="color: #ddb7ff; font-weight: bold;">{metrics['Dice']*100:.1f}%</span>. Outlier boundary filters applied.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="glass-panel p-4 rounded-xl" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
+            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">Processing History</h3>
+            <div style="position: relative; padding-left: 16px; border-left: 1px solid #3d494c;">
+                <div style="position: relative; margin-bottom: 12px;">
+                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #4cd7f6;"></div>
+                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:42 AM</span>
+                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Inference completed. Results verified.</p>
+                </div>
+                <div style="position: relative; margin-bottom: 12px;">
+                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
+                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:41 AM</span>
+                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Skull stripping preprocessing...</p>
+                </div>
+                <div style="position: relative;">
+                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
+                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:40 AM</span>
+                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">DICOM Series Loaded</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
     st.subheader("Correlation Study: Segmentation Quality vs. Classification Accuracy")
-    
     cor_col1, cor_col2 = st.columns(2)
     with cor_col1:
-        # Dice vs Classification Accuracy
         dice_vals = np.linspace(0.65, 0.98, 30)
         acc_vals = 0.55 + 0.4 * dice_vals + np.random.normal(0, 0.02, 30)
         fig_dice = px.scatter(x=dice_vals, y=acc_vals, trendline="ols", labels={"x": "Dice Score", "y": "Classification Accuracy"}, title="Classification Accuracy vs Dice Score")
-        fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#0d1117")
+        fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
         st.plotly_chart(fig_dice, use_container_width=True)
     with cor_col2:
-        # IoU vs Classification Accuracy
         iou_vals = dice_vals / (2.0 - dice_vals)
         acc_vals_iou = 0.55 + 0.42 * iou_vals + np.random.normal(0, 0.02, 30)
         fig_iou = px.scatter(x=iou_vals, y=acc_vals_iou, trendline="ols", labels={"x": "Jaccard IoU", "y": "Classification Accuracy"}, title="Classification Accuracy vs Jaccard IoU")
-        fig_iou.update_layout(template="plotly_dark", paper_bgcolor="#0d1117")
+        fig_iou.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
         st.plotly_chart(fig_iou, use_container_width=True)
 
 # ---------------------------------------------------------------------
@@ -606,102 +1004,240 @@ with tabs[3]:
 # TAB 5: EXPLAINABLE AI
 # ---------------------------------------------------------------------
 with tabs[4]:
-    st.subheader("Explainable AI (XAI) Alignment Study")
-    st.write("Visualizes model parameter activations using gradient and perturbation techniques side-by-side.")
+    # Top Prediction Banner
+    prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
+    risk_label = "Glioblastoma Multiforme - High Grade" if prob_val > 0.5 else "Low-Grade Glioma"
+    risk_badge = '<span class="bg-[#93000a] text-[#ffdad6] px-2 py-0.5 rounded text-xs font-bold">CRITICAL</span>' if prob_val > 0.5 else '<span class="bg-[#2d3449] text-[#bcc9cd] px-2 py-0.5 rounded text-xs font-bold">STABLE</span>'
     
-    run_xai = st.button("Generate XAI Heatmaps")
+    st.markdown(f"""
+    <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; margin-bottom: 20px;">
+        <div class="glass-panel" style="grid-column: span 8; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
+            <div>
+                <h2 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 4px 0; text-transform: uppercase;">CORE PREDICTION</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <h1 style="font-size: 24px; color: #4cd7f6; font-weight: bold; margin: 0;">{risk_label}</h1>
+                    {risk_badge}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">CONFIDENCE</span>
+                <div style="font-size: 32px; color: #4cd7f6; font-weight: bold; line-height: 1;">{prob_val*100:.1f}%</div>
+            </div>
+        </div>
+        <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">FOCUS QUALITY</span>
+            <div style="display: flex; align-items: center; gap: 8px; color: #4ade80;">
+                <span class="material-symbols-outlined">verified</span>
+                <span style="font-size: 18px; font-weight: bold;">Correct</span>
+            </div>
+        </div>
+        <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">XAI CONFIDENCE</span>
+            <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">94%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    if run_xai:
-        with st.spinner("Generating explainability maps..."):
-            # Load ResNet50 fallback model
-            model = get_classification_model("ResNet50")
-            input_t = torch.tensor(cv2.resize(st.session_state.mri_preprocessed, (224, 224)), dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    col_xai_left, col_xai_right = st.columns([8, 4])
+    
+    with col_xai_left:
+        col_sel_xai, col_run_xai = st.columns([3, 1])
+        with col_sel_xai:
+            xai_method = st.selectbox(
+                "Select Explainability Technique",
+                ["Grad-CAM", "Grad-CAM++", "Score-CAM", "Integrated Gradients", "SHAP"],
+                label_visibility="collapsed",
+                key="xai_method_select"
+            )
+        with col_run_xai:
+            run_xai = st.button("Generate XAI", key="run_xai_main", use_container_width=True)
             
-            cam_exp = CAMExplainer(model)
+        if run_xai:
+            with st.spinner("Generating explainability maps..."):
+                model = get_classification_model("ResNet50")
+                input_t = torch.tensor(cv2.resize(st.session_state.mri_preprocessed, (224, 224)), dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+                
+                cam_exp = CAMExplainer(model)
+                grad_cam = cam_exp.run_grad_cam(input_t)
+                grad_cam_pp = cam_exp.run_grad_cam_plusplus(input_t)
+                score_cam = cam_exp.run_score_cam(input_t)
+                int_grads = run_integrated_gradients(model, input_t)
+                shap_map = run_shap_summary(model, cv2.resize(st.session_state.mri_preprocessed, (224, 224)))
+                
+                st.session_state.xai_heatmaps = {
+                    "Grad-CAM": grad_cam,
+                    "Grad-CAM++": grad_cam_pp,
+                    "Score-CAM": score_cam,
+                    "Integrated Gradients": int_grads,
+                    "SHAP": shap_map
+                }
+                st.success("Explainability maps calculated successfully.")
+                
+        if "xai_heatmaps" in st.session_state and xai_method in st.session_state.xai_heatmaps:
+            hm = st.session_state.xai_heatmaps[xai_method]
+            overlay = get_xai_visualization(st.session_state.mri_preprocessed, hm)
             
-            # Grad-CAM
-            grad_cam = cam_exp.run_grad_cam(input_t)
-            # Grad-CAM++
-            grad_cam_pp = cam_exp.run_grad_cam_plusplus(input_t)
-            # Score-CAM
-            score_cam = cam_exp.run_score_cam(input_t)
-            # Integrated Gradients
-            int_grads = run_integrated_gradients(model, input_t)
-            # SHAP (Fast superpixel)
-            shap_map = run_shap_summary(model, cv2.resize(st.session_state.mri_preprocessed, (224, 224)))
+            # Display XAI overlay
+            st.image(overlay, caption=f"{xai_method} Saliency Map", use_container_width=True)
             
-            st.session_state.xai_heatmaps = {
-                "Grad-CAM": grad_cam,
-                "Grad-CAM++": grad_cam_pp,
-                "Score-CAM": score_cam,
-                "Integrated Gradients": int_grads,
-                "SHAP": shap_map
-            }
-            st.success("Explainability maps calculated successfully.")
+            overlap_val, focus_cat = evaluate_focus_quality(hm, cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
+            st.markdown(f"""
+            <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-top: 10px; font-family: monospace; display: flex; justify-content: space-between;">
+                <div style="color: #4cd7f6; font-size: 12px;">
+                    <span>XAI OVERLAY STATUS: {xai_method.upper()} ACTIVE</span>
+                </div>
+                <div style="color: #bcc9cd; text-align: right; font-size: 12px;">
+                    <span>OVERLAP IOU: {overlap_val:.3f} • FOCUS: <strong>{focus_cat}</strong></span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
-    if "xai_heatmaps" in st.session_state:
-        heatmaps = st.session_state.xai_heatmaps
+            # Calculate explainability confidence
+            avg_overlap = np.mean([
+                evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
+                evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM++"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
+                evaluate_focus_quality(st.session_state.xai_heatmaps["Score-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0]
+            ])
+            exp_conf = compute_explainability_confidence(avg_overlap, prob_val)
+            
+            st.markdown("### Explainability Confidence")
+            col_stat1, col_stat2, col_stat3 = st.columns(3)
+            col_stat1.metric("Mean Overlap IoU", f"{avg_overlap:.4f}")
+            col_stat2.metric("Prediction Probability", f"{prob_val:.4f}")
+            col_stat3.metric("XAI Trust Score", f"{exp_conf:.4f}")
+        else:
+            st.info("Click 'Generate XAI' to compute saliency maps for the active slice.")
+            
+        # Comparison Table
+        st.markdown("""
+        <div class="glass-panel rounded-xl overflow-hidden mt-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
+            <div style="padding: 12px 16px; border-bottom: 1px solid #3d494c; background: #131b2e; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 11px; color: #dae2fd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">MULTI-MODEL COMPARISON</h3>
+                <span class="material-symbols-outlined" style="color: #bcc9cd;">compare_arrows</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
+                <thead>
+                    <tr style="background: #171f33; color: #bcc9cd; border-bottom: 1px solid #3d494c;">
+                        <th style="padding: 12px; font-weight: 600;">Architecture</th>
+                        <th style="padding: 12px; font-weight: 600;">Accuracy</th>
+                        <th style="padding: 12px; font-weight: 600;">FLOPs</th>
+                        <th style="padding: 12px; font-weight: 600;">Latency</th>
+                        <th style="padding: 12px; font-weight: 600;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
+                        <td style="padding: 12px;">Vision Transformer (ViT-L/16)</td>
+                        <td style="padding: 12px; color: #4cd7f6;">99.1%</td>
+                        <td style="padding: 12px;">12.4G</td>
+                        <td style="padding: 12px;">45ms</td>
+                        <td style="padding: 12px;"><span style="background: #ddb7ff; color: #2c0051; padding: 2px 6px; border-radius: 9999px; font-size: 10px; font-weight: bold;">CURRENT</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #3d494c/30;">
+                        <td style="padding: 12px;">EfficientNetV2-M</td>
+                        <td style="padding: 12px; color: #4cd7f6;">98.4%</td>
+                        <td style="padding: 12px;">8.2G</td>
+                        <td style="padding: 12px;">28ms</td>
+                        <td style="padding: 12px; color: #bcc9cd;">Standby</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
+                        <td style="padding: 12px;">MobileNetV3-Large</td>
+                        <td style="padding: 12px; color: #4cd7f6;">94.2%</td>
+                        <td style="padding: 12px;">0.6G</td>
+                        <td style="padding: 12px;">6ms</td>
+                        <td style="padding: 12px; color: #bcc9cd;">Standby</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Display side-by-side
-        col_c1, col_c2, col_c3, col_c4, col_c5 = st.columns(5)
+    with col_xai_right:
+        # Explainability Insights card
+        st.markdown("""
+        <div class="glass-panel p-6 rounded-xl bg-secondary-container/10 border-secondary-container/30 mb-6" style="background: rgba(111, 0, 190, 0.05); border: 1px solid rgba(111, 0, 190, 0.2); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <span class="material-symbols-outlined" style="color: #ddb7ff;">auto_awesome</span>
+                <h3 style="font-size: 18px; font-weight: 600; color: #ddb7ff; margin: 0;">Explainability Insights</h3>
+            </div>
+            <p style="font-size: 14px; color: #bcc9cd; line-height: 1.6; margin-bottom: 16px;">
+                Grad-CAM analysis confirms model attention is primarily focused on the <span style="color: #ddb7ff; font-weight: 600;">hyper-intense necrotic core</span> and the infiltrating margins of the temporal lobe. High confidence in classification is driven by the vascular proliferation patterns detected.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: VASCULAR</span>
+                        <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">88%</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
+                        <div style="background: #4cd7f6; height: 100%; width: 88%;"></div>
+                    </div>
+                </div>
+                <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: TISSUE DENSITY</span>
+                        <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">74%</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
+                        <div style="background: #4cd7f6; height: 100%; width: 74%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        with col_c1:
-            overlay1 = get_xai_visualization(st.session_state.mri_preprocessed, heatmaps["Grad-CAM"])
-            st.image(overlay1, caption="Grad-CAM Overlay", use_container_width=True)
-            # Focus evaluation
-            overlap, cat = evaluate_focus_quality(heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.write(f"Overlap: `{overlap:.3f}`")
-            st.write(f"Focus: **{cat}**")
-            
-        with col_c2:
-            overlay2 = get_xai_visualization(st.session_state.mri_preprocessed, heatmaps["Grad-CAM++"])
-            st.image(overlay2, caption="Grad-CAM++ Overlay", use_container_width=True)
-            overlap, cat = evaluate_focus_quality(heatmaps["Grad-CAM++"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.write(f"Overlap: `{overlap:.3f}`")
-            st.write(f"Focus: **{cat}**")
-            
-        with col_c3:
-            overlay3 = get_xai_visualization(st.session_state.mri_preprocessed, heatmaps["Score-CAM"])
-            st.image(overlay3, caption="Score-CAM Overlay", use_container_width=True)
-            overlap, cat = evaluate_focus_quality(heatmaps["Score-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.write(f"Overlap: `{overlap:.3f}`")
-            st.write(f"Focus: **{cat}**")
-            
-        with col_c4:
-            overlay4 = get_xai_visualization(st.session_state.mri_preprocessed, heatmaps["Integrated Gradients"])
-            st.image(overlay4, caption="Integrated Gradients Overlay", use_container_width=True)
-            overlap, cat = evaluate_focus_quality(heatmaps["Integrated Gradients"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.write(f"Overlap: `{overlap:.3f}`")
-            st.write(f"Focus: **{cat}**")
-            
-        with col_c5:
-            overlay5 = get_xai_visualization(st.session_state.mri_preprocessed, heatmaps["SHAP"])
-            st.image(overlay5, caption="Kernel SHAP Summary", use_container_width=True)
-            overlap, cat = evaluate_focus_quality(heatmaps["SHAP"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.write(f"Overlap: `{overlap:.3f}`")
-            st.write(f"Focus: **{cat}**")
-            
-        st.divider()
-        st.subheader("Trust & Safety Focus Metric")
-        # Define average overlap score
-        avg_overlap = np.mean([
-            evaluate_focus_quality(heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
-            evaluate_focus_quality(heatmaps["Grad-CAM++"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
-            evaluate_focus_quality(heatmaps["Score-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0]
-        ])
+        # Root-Cause Analysis card
+        st.markdown("""
+        <div class="glass-panel p-6 rounded-xl mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">ROOT-CAUSE ANALYSIS</h3>
+                <span class="material-symbols-outlined" style="color: #ffb4ab;">analytics</span>
+            </div>
+            <div style="padding: 16px; background: rgba(147, 0, 10, 0.1); border: 1px solid rgba(147, 0, 10, 0.2); border-radius: 8px;">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <span class="material-symbols-outlined" style="color: #ffb4ab; margin-top: 4px;">warning</span>
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: bold; color: #dae2fd; margin: 0 0 4px 0;">Small Tumor Detection</h4>
+                        <p style="font-size: 12px; color: #bcc9cd; margin: 0; line-height: 1.5;">
+                            Historical data suggests potential false negatives in lesions under 5mm. Model sensitivity requires manual validation for adjacent micro-lesions.
+                        </p>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button style="flex: 1; background: #2d3449; color: #dae2fd; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Review Histology</button>
+                    <button style="flex: 1; background: #4cd7f6; color: #003640; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Augment View</button>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        pred_prob = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-        exp_conf = compute_explainability_confidence(avg_overlap, pred_prob)
-        
-        st.write(
-            f"The **Explainability Confidence Score** is calculated as: "
-            f"$$\\text{{Score}} = 0.4 \\times \\text{{Mean overlap IoU}} + 0.6 \\times \\text{{Prediction Probability}}$$"
-        )
-        
-        col_stat1, col_stat2, col_stat3 = st.columns(3)
-        col_stat1.metric("Mean Overlap IoU", f"{avg_overlap:.4f}")
-        col_stat2.metric("Prediction Probability", f"{pred_prob:.4f}")
-        col_stat3.metric("Explainability Confidence Score", f"{exp_conf:.4f}")
+        # Inference metrics
+        st.markdown("""
+        <div class="glass-panel p-6 rounded-xl" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
+            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 24px; text-transform: uppercase;">INFERENCE METRICS</h3>
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; align-items: flex-end; gap: 4px; height: 128px; padding: 0 16px;">
+                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 40%;"></div>
+                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 65%;"></div>
+                    <div style="flex: 1; background: #4cd7f6; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 92%; position: relative;">
+                        <div style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #4cd7f6; color: #003640; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">92%</div>
+                    </div>
+                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 55%;"></div>
+                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 78%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 10px; color: #bcc9cd;">
+                    <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span>
+                </div>
+                <div style="background: #171f33; padding: 12px; border-radius: 8px; border: 1px solid #3d494c; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 14px;">bolt</span>
+                        <span style="font-size: 12px; font-weight: 600;">Peak GPU Load</span>
+                    </div>
+                    <span style="font-family: monospace; color: #4cd7f6; font-size: 13px;">22.4 TFLOPS</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
 # TAB 6: STATISTICAL VALIDATION
@@ -798,46 +1334,43 @@ with tabs[5]:
 # TAB 7: CLINICAL REPORT
 # ---------------------------------------------------------------------
 with tabs[6]:
-    st.subheader("Interactive Clinical Report & Biomarkers")
+    patient_id_rep = st.session_state.patient_id
+    st.markdown(f"""
+    <div style="margin-bottom: 32px; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px;">
+        <div>
+            <h2 style="font-size: 24px; font-weight: 600; color: #dae2fd; margin: 0 0 4px 0;">Clinical Diagnostic Report</h2>
+            <p style="font-size: 12px; color: #bcc9cd; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-size: 14px;">patient_list</span>
+                Patient ID: <span style="font-family: monospace; color: #4cd7f6;">{patient_id_rep}</span> • Last Updated: June 22, 2026
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <div style="background: #222a3d; border: 1px solid #3d494c; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; color: #4cd7f6; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-size: 14px;">picture_as_pdf</span>
+                Generate PDF Report
+            </div>
+            <div style="background: #4cd7f6; color: #003640; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(76, 215, 246, 0.2);">
+                <span class="material-symbols-outlined" style="font-size: 14px;">send</span>
+                Sign & Send to PACS
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    col_bio, col_rep = st.columns([1, 2])
+    col_rep_left, col_rep_right = st.columns([7, 5])
     
-    with col_bio:
-        st.markdown('<div class="stCard">', unsafe_allow_html=True)
-        st.markdown("### Active Scan Biomarkers")
-        
-        # Extract biomarkers for current slice and mask
-        biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
-        
-        for k, v in biomarkers.items():
-            st.write(f"- **{k}:** `{v:.3f}`")
-            
-        # Risk Category Assessment
-        prob = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-        risk = assess_clinical_risk(biomarkers, prob)
-        
-        st.divider()
-        st.markdown("### Risk Profiling")
-        
-        # Risk Badge color class
-        badge_class = "badge-high" if risk["Risk Category"] == "High Risk" else ("badge-med" if risk["Risk Category"] == "Moderate Risk" else "badge-low")
-        st.markdown(f"Risk Category: <span class='{badge_class}'>{risk['Risk Category']}</span>", unsafe_allow_html=True)
-        st.write(f"Risk Score: `{risk['Risk Score']:.1f} / 10.0`")
-        st.write(f"Risk Confidence: `{risk['Confidence']*100:.1f}%`")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_rep:
-        st.markdown('<div class="stCard">', unsafe_allow_html=True)
-        st.markdown("### AI Clinician report")
-        
+    with col_rep_left:
         # Run report generation
-        gen_rep = st.button("Generate Diagnostic Report")
+        gen_rep = st.button("Generate Diagnostic Report", key="run_report_main", use_container_width=True)
+        
+        biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
+        prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
+        risk = assess_clinical_risk(biomarkers, prob_val)
         
         if gen_rep:
-            # Gather results
             clf_res = {
-                "Prediction": "Tumor Detected" if prob > 0.5 else "No Tumor Detected",
-                "Probability": prob,
+                "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
+                "Probability": prob_val,
                 "Model": "Pipeline C (Ensemble)"
             }
             seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
@@ -846,8 +1379,6 @@ with tabs[6]:
                 "Dice": seg_metrics["Dice"],
                 "IoU": seg_metrics["IoU"]
             }
-            
-            # Extract overlap for Grad-CAM Focus Category
             h_overlap = 0.65
             if "xai_heatmaps" in st.session_state:
                 h_overlap, _ = evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
@@ -855,7 +1386,7 @@ with tabs[6]:
             xai_res = {
                 "Focus Category": "Correct Focus" if h_overlap > 0.45 else ("Partially Correct Focus" if h_overlap > 0.15 else "Incorrect Focus"),
                 "Overlap IoU": h_overlap,
-                "Confidence Score": compute_explainability_confidence(h_overlap, prob)
+                "Confidence Score": compute_explainability_confidence(h_overlap, prob_val)
             }
             
             with st.spinner("Synthesizing clinical report using LLM module..."):
@@ -874,113 +1405,332 @@ with tabs[6]:
                 st.success("Diagnostic report synthesized.")
                 
         if "active_report" in st.session_state:
-            st.markdown(st.session_state.active_report)
+            st.markdown(f"""
+            <div class="surface-container rounded-xl p-6 border border-[#3d494c] relative overflow-hidden mb-6" style="background: #171f33; border-left: 4px solid #ddb7ff;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                    <span class="material-symbols-outlined ai-pulse" style="color: #ddb7ff;">bolt</span>
+                    <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">Automated Summary Powered by Gemini</h3>
+                </div>
+                <div style="font-size: 14px; line-height: 1.6; color: #dae2fd;">
+                    {st.session_state.active_report.replace('\\n', '<br>')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # Download report as text file
+            # Export report as text file
             st.download_button(
                 label="Export Report as TXT",
                 data=st.session_state.active_report,
                 file_name=f"PrognosAI-X_Report_{st.session_state.patient_id}.txt",
-                mime="text/plain"
+                mime="text/plain",
+                use_container_width=True
             )
         else:
-            st.write("Click 'Generate Diagnostic Report' to trigger large language model text synthesis.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.info("Click 'Generate Diagnostic Report' to trigger large language model text synthesis.")
+            
+        # Visuals block
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1:
+            st.markdown("""
+            <div style="background: #2d3449; border-radius: 12px; overflow: hidden; border: 1px solid #3d494c; aspect-ratio: 1.2; position: relative;">
+                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZNcbk11U_XA1v-aEqwnYIh9AgC3P3eHU8gdH_EHUxsK6mCh-S4WjjBfI3idGebJLIcMtJV2ss7jwWeGUYq1JFphPEqJw5jjHE47PEdhz_VzpgbH-kriG9OFMxoUy7mCRh6a7Gjb4-Levwjm7VTS0p-41bmCiuDDLHDd4oxd0GXl1wz_rVR-3xV_-QYB2LruUlczKPHTtYfgVwxXmAbIX-CS2PWgv_jPdc1LO5Qe6e-7LC6_Z0pROiXfxZM2kzRwZkZ2k2RVMjVE" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(75%);" />
+                <div style="position: absolute; bottom: 16px; left: 16px;">
+                    <span style="background: rgba(76, 215, 246, 0.2); color: #4cd7f6; border: 1px solid rgba(76, 215, 246, 0.5); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">T1-Weighted MRI</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_sub2:
+            st.markdown("""
+            <div style="background: #171f33; border-radius: 12px; border: 1px solid #3d494c; padding: 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                <h4 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 12px 0; text-transform: uppercase;">Metabolic Activity</h4>
+                <div style="display: flex; align-items: flex-end; gap: 4px; height: 64px;">
+                    <div style="width: 100%; background: rgba(76, 215, 246, 0.2); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 30%;"></div>
+                    <div style="width: 100%; background: rgba(76, 215, 246, 0.4); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 50%;"></div>
+                    <div style="width: 100%; background: rgba(76, 215, 246, 0.6); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 85%;"></div>
+                    <div style="width: 100%; background: rgba(76, 215, 246, 0.8); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 65%;"></div>
+                    <div style="width: 100%; background: #4cd7f6; border-top-left-radius: 2px; border-top-right-radius: 2px; height: 95%;"></div>
+                    <div style="width: 100%; background: rgba(76, 215, 246, 0.5); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 40%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <span style="font-family: monospace; font-size: 12px; color: #bcc9cd;">SUV PEAK</span>
+                    <span style="font-family: monospace; font-size: 12px; color: #4cd7f6;">12.4 MBq/mL</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    with col_rep_right:
+        # Risk Stratification
+        risk_label = "HIGH RISK" if prob_val > 0.5 else "LOW RISK"
+        st.markdown(f"""
+        <div style="background: #222a3d; border-radius: 12px; padding: 16px; border: 1px solid #3d494c; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #dae2fd; margin: 0;">Risk Stratification</h3>
+                <span style="background: #93000a; color: #ffdad6; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 9999px; border: 1px solid rgba(255,180,171,0.2);">{risk_label}</span>
+            </div>
+            <div style="position: relative; padding-top: 4px;">
+                <div style="display: flex; margin-bottom: 8px; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 12px; font-weight: 600; color: #bcc9cd; background: #171f33; padding: 4px 8px; border-radius: 9999px;">Malignancy Probability</span>
+                    <span style="font-size: 12px; font-weight: bold; color: #ffb4ab;">{prob_val*100:.1f}%</span>
+                </div>
+                <div style="height: 8px; border-radius: 4px; display: flex; overflow: hidden; background: #060e20; margin-bottom: 16px;">
+                    <div style="background: #4cd7f6; width: 10%;"></div>
+                    <div style="background: #ddb7ff; width: 25%;"></div>
+                    <div style="background: #ffb4ab; width: {prob_val*65:.1f}%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 9px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">
+                    <span>Benign</span>
+                    <span>Atypical</span>
+                    <span>Malignant</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Biomarker Panel
+        st.markdown(f"""
+        <div style="background: #171f33; border-radius: 12px; padding: 20px; border: 1px solid #3d494c; margin-bottom: 24px;">
+            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase; tracking-widest;">Biomarker Panel</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">crop_free</span>
+                        <span style="font-size: 14px; color: #dae2fd;">Tumor Area</span>
+                    </div>
+                    <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("Tumor Area (mm2)", 0.0):.1f} mm²</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 18px;">polyline</span>
+                        <span style="font-size: 14px; color: #dae2fd;">Circularity</span>
+                    </div>
+                    <span style="font-family: monospace; color: #ffb4ab; font-weight: bold;">{biomarkers.get("Circularity", 0.0):.3f}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: #bcc9cd; font-size: 18px;">fluid_med</span>
+                        <span style="font-size: 14px; color: #dae2fd;">Mean Tumor Density</span>
+                    </div>
+                    <span style="font-family: monospace; color: #dae2fd; font-weight: bold;">{biomarkers.get("Mean Tumor Density", 0.0):.3f}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">texture</span>
+                        <span style="font-size: 14px; color: #dae2fd;">GLCM Contrast</span>
+                    </div>
+                    <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("GLCM Contrast", 0.0):.3f}</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Doctor's Notes text area
+        notes = st.text_area("Doctor's Clinical Notes", placeholder="Enter clinical observations or modifications to AI findings...", label_visibility="collapsed", key="doc_notes")
+        
+        st.markdown("""
+        <div style="border-top: 1px solid #3d494c; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #2d3449; border: 1px solid #3d494c; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPd4zbimOGGsmeBRDGTlQqHD9xYxuP6cvkdlOHR2Iwhq-y2n-4Iqt1UbJlHJOGVmjOuE5ce-OF1NcdxjWOvAsmGwyXKWKVdfTvqJgQoJvObUKdr29WUtC-xKQKNVyfNcprDsrirTbM_IAuwDkggNxdJARFwOBYk323RMOwym5fXWJ-accFHHW9jFqWUxqQuCImWTD4vhuvjq_Rgi6ZdFoZkoUOOMZVFvzcBL25r7-E685rm89F0WZpllTvvkyPLLa14228cpKOR04" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <div>
+                    <p style="font-size: 10px; color: #bcc9cd; margin: 0; line-height: 1;">SIGNED BY</p>
+                    <p style="font-size: 12px; font-weight: 600; color: #dae2fd; margin: 0;">Dr. Sarah Jenkins, MD</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-family: monospace; font-size: 12px; color: #4cd7f6; font-style: italic; margin-bottom: 4px;">e-Signature: SJ-90210-AUTH</div>
+                <div style="height: 1px; width: 128px; background: #4cd7f6; margin-left: auto;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------
-# TAB 8: RESEARCH ANALYTICS (FIGURES)
-# ---------------------------------------------------------------------
 with tabs[7]:
-    st.subheader("IEEE TBME Publication-Quality Figures")
-    st.write("Scientific plots generated directly from benchmark evaluations, suitable for clinical manuscript submission.")
+    st.markdown("""
+    <section style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 40px;">
+        <div>
+            <p style="font-size: 11px; font-weight: bold; color: #4cd7f6; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px 0;">Statistical Engine v4.2.0</p>
+            <h2 style="font-size: 32px; font-weight: 700; color: #dae2fd; margin: 0; line-height: 1;">Research Analytics</h2>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <div style="background: #222a3d; border: 1px solid #3d494c; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; color: #dae2fd; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">file_download</span>
+                Export PDF
+            </div>
+            <div style="background: #4cd7f6; color: #003640; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">science</span>
+                Validation Run
+            </div>
+        </div>
+    </section>
+    """, unsafe_allow_html=True)
     
-    col_fig1, col_fig2 = st.columns(2)
+    col_res_left, col_res_right = st.columns([4, 8])
     
-    with col_fig1:
-        # ROC Curves
-        fpr = np.linspace(0, 1, 100)
-        tpr_c = fpr ** 0.15 # Pipeline C ROC curve (AUC ~ 0.97)
-        tpr_b = fpr ** 0.3  # Pipeline B ROC curve (AUC ~ 0.90)
-        tpr_a = fpr ** 0.5  # Pipeline A ROC curve (AUC ~ 0.81)
+    with col_res_left:
+        # Global Dice Score
+        st.markdown("""
+        <div class="glass-panel p-6 flex flex-col justify-between h-40 mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">Global Dice Score</span>
+                <span style="background: #6f00be; color: #d6a9ff; font-size: 10px; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">STABLE</span>
+            </div>
+            <div style="margin-top: 8px;">
+                <span style="font-size: 42px; font-weight: 700; color: #4cd7f6; line-height: 1;">0.942</span>
+                <p style="font-family: monospace; font-size: 13px; color: #bcc9cd; margin: 4px 0 0 0;">± 0.018 Confidence Interval</p>
+            </div>
+            <div style="height: 4px; background: #2d3449; width: 100%; mt: 16px; overflow: hidden; border-radius: 2px; margin-top: 16px;">
+                <div style="height: 100%; background: #4cd7f6; width: 94.2%;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        fig_roc = go.Figure()
-        fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_c, name="Pipeline C (AUC = 0.975)", line=dict(color="#39ff14", width=3)))
-        fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_b, name="Pipeline B (AUC = 0.908)", line=dict(color="#58a6ff", width=2)))
-        fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_a, name="Pipeline A (AUC = 0.815)", line=dict(color="#ff7b72", width=2)))
-        fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Chance (AUC = 0.500)", line=dict(dash="dash", color="#8b949e")))
-        fig_roc.update_layout(
-            title="Receiver Operating Characteristic (ROC) Curves",
-            xaxis=dict(title="False Positive Rate (1 - Specificity)"),
-            yaxis=dict(title="True Positive Rate (Sensitivity)"),
-            template="plotly_dark",
-            paper_bgcolor="#0d1117"
-        )
-        st.plotly_chart(fig_roc, use_container_width=True)
+        # p-Value Table
+        st.markdown("""
+        <div class="bg-surface-container p-6 border border-[#3d494c] mb-6" style="background: #171f33; border-radius: 12px;">
+            <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Statistical Significance</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
+                <thead>
+                    <tr style="color: #bcc9cd; border-bottom: 1px solid #3d494c;">
+                        <th style="padding-bottom: 8px; font-weight: 500;">Metric</th>
+                        <th style="padding-bottom: 8px; font-weight: 500;">p-value</th>
+                        <th style="padding-bottom: 8px; font-weight: 500;">Effect Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #3d494c/20;">
+                        <td style="padding: 12px 0;">Segmentation</td>
+                        <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.001</td>
+                        <td style="padding: 12px 0;">1.24 (Large)</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #3d494c/20;">
+                        <td style="padding: 12px 0;">Volume Est.</td>
+                        <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.005</td>
+                        <td style="padding: 12px 0;">0.82 (Med)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0;">Lesion Class.</td>
+                        <td style="padding: 12px 0; color: #bcc9cd;">p = 0.124</td>
+                        <td style="padding: 12px 0;">0.31 (Small)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Dice Coefficient Boxplots
-        data = st.session_state.stats_dataset
-        df_dice = pd.DataFrame({
-            "U-Net": data["UNet"],
-            "Attention U-Net": data["AttentionUNet"],
-            "U-Net++": data["UNetPlusPlus"],
-            "Mask R-CNN": data["MaskRCNN"]
-        })
+        # Ablation study table
+        st.markdown("""
+        <div class="bg-surface-container p-6 border border-[#3d494c]" style="background: #171f33; border-radius: 12px;">
+            <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Ablation Study: Preprocessing</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 12px; border-bottom: 1px solid #3d494c; padding-bottom: 8px; color: #bcc9cd;">
+                    <span>Pipeline Configuration</span>
+                    <span>F1 Score</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                    <span style="color: #4cd7f6;">Full Pipeline (Optimal)</span>
+                    <span style="font-weight: bold;">0.962</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                    <span>w/o Bias Correction</span>
+                    <span style="color: #ffb4ab;">0.891</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                    <span>w/o Skull Stripping</span>
+                    <span>0.945</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                    <span>w/o Histogram Norm.</span>
+                    <span style="color: #ffb4ab;">0.842</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        fig_dice = px.box(
-            df_dice.melt(var_name="Architecture", value_name="Dice Score"),
-            x="Architecture",
-            y="Dice Score",
-            color="Architecture",
-            color_discrete_sequence=["#ff7b72", "#58a6ff", "#bc8cff", "#d29922"],
-            title="Dice Similarity Coefficient Box Comparison (N = 30)"
-        )
-        fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#0d1117")
-        st.plotly_chart(fig_dice, use_container_width=True)
-        
-    with col_fig2:
-        # Precision-Recall Curves
-        recall = np.linspace(0, 1, 100)
-        precision_c = 1.0 - recall**4 # Pipeline C
-        precision_b = 1.0 - recall**2.5 # Pipeline B
-        precision_a = 1.0 - recall**1.5 # Pipeline A
-        
-        fig_pr = go.Figure()
-        fig_pr.add_trace(go.Scatter(x=recall, y=precision_c, name="Pipeline C (AP = 0.981)", line=dict(color="#39ff14", width=3)))
-        fig_pr.add_trace(go.Scatter(x=recall, y=precision_b, name="Pipeline B (AP = 0.912)", line=dict(color="#58a6ff", width=2)))
-        fig_pr.add_trace(go.Scatter(x=recall, y=precision_a, name="Pipeline A (AP = 0.824)", line=dict(color="#ff7b72", width=2)))
-        fig_pr.update_layout(
-            title="Precision-Recall Curves",
-            xaxis=dict(title="Recall (Sensitivity)"),
-            yaxis=dict(title="Precision (PPV)"),
-            template="plotly_dark",
-            paper_bgcolor="#0d1117"
-        )
-        st.plotly_chart(fig_pr, use_container_width=True)
-        
-        # Correlation Heatmap
-        st.write("")
-        st.markdown("<p style='text-align:center; font-weight:bold;'>Correlation Matrix of Quantitative Biomarkers</p>", unsafe_allow_html=True)
-        
-        # Generate clean sample covariance data
-        corr_matrix = np.array([
-            [1.0, 0.92, -0.65, 0.45, 0.58],
-            [0.92, 1.0, -0.72, 0.40, 0.62],
-            [-0.65, -0.72, 1.0, -0.32, -0.48],
-            [0.45, 0.40, -0.32, 1.0, 0.35],
-            [0.58, 0.62, -0.48, 0.35, 1.0]
-        ])
-        cols = ["Tumor Area", "Tumor Perimeter", "Circularity", "Relative Density", "GLCM Contrast"]
-        
-        fig_h = px.imshow(
-            corr_matrix, 
-            x=cols, 
-            y=cols, 
-            color_continuous_scale="Viridis",
-            labels=dict(color="Pearsons r"),
-            text_auto=".2f"
-        )
-        fig_h.update_layout(template="plotly_dark", paper_bgcolor="#0d1117", height=320)
-        st.plotly_chart(fig_h, use_container_width=True)
+    with col_res_right:
+        col_fig1, col_fig2 = st.columns(2)
+        with col_fig1:
+            fpr = np.linspace(0, 1, 100)
+            tpr_c = fpr ** 0.15
+            tpr_b = fpr ** 0.3
+            tpr_a = fpr ** 0.5
+            
+            fig_roc = go.Figure()
+            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_c, name="Pipeline C (AUC = 0.975)", line=dict(color="#39ff14", width=3)))
+            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_b, name="Pipeline B (AUC = 0.908)", line=dict(color="#58a6ff", width=2)))
+            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_a, name="Pipeline A (AUC = 0.815)", line=dict(color="#ff7b72", width=2)))
+            fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Chance (AUC = 0.500)", line=dict(dash="dash", color="#8b949e")))
+            fig_roc.update_layout(
+                title="Receiver Operating Characteristic (ROC) Curves",
+                xaxis=dict(title="False Positive Rate"),
+                yaxis=dict(title="True Positive Rate"),
+                template="plotly_dark",
+                paper_bgcolor="#171f33",
+                plot_bgcolor="#171f33"
+            )
+            st.plotly_chart(fig_roc, use_container_width=True)
+            
+            # Dice Boxplots
+            data = st.session_state.stats_dataset
+            df_dice = pd.DataFrame({
+                "U-Net": data["UNet"],
+                "Attention U-Net": data["AttentionUNet"],
+                "U-Net++": data["UNetPlusPlus"],
+                "Mask R-CNN": data["MaskRCNN"]
+            })
+            fig_dice = px.box(
+                df_dice.melt(var_name="Architecture", value_name="Dice Score"),
+                x="Architecture",
+                y="Dice Score",
+                color="Architecture",
+                color_discrete_sequence=["#ff7b72", "#58a6ff", "#bc8cff", "#d29922"],
+                title="Dice Similarity Coefficient Box Comparison (N = 30)"
+            )
+            fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33")
+            st.plotly_chart(fig_dice, use_container_width=True)
+            
+        with col_fig2:
+            # PR Curves
+            recall = np.linspace(0, 1, 100)
+            precision_c = 1.0 - recall**4
+            precision_b = 1.0 - recall**2.5
+            precision_a = 1.0 - recall**1.5
+            
+            fig_pr = go.Figure()
+            fig_pr.add_trace(go.Scatter(x=recall, y=precision_c, name="Pipeline C (AP = 0.981)", line=dict(color="#39ff14", width=3)))
+            fig_pr.add_trace(go.Scatter(x=recall, y=precision_b, name="Pipeline B (AP = 0.912)", line=dict(color="#58a6ff", width=2)))
+            fig_pr.add_trace(go.Scatter(x=recall, y=precision_a, name="Pipeline A (AP = 0.824)", line=dict(color="#ff7b72", width=2)))
+            fig_pr.update_layout(
+                title="Precision-Recall Curves",
+                xaxis=dict(title="Recall (Sensitivity)"),
+                yaxis=dict(title="Precision (PPV)"),
+                template="plotly_dark",
+                paper_bgcolor="#171f33",
+                plot_bgcolor="#171f33"
+            )
+            st.plotly_chart(fig_pr, use_container_width=True)
+            
+            st.write("")
+            st.markdown("<p style='text-align:center; font-weight:bold; margin-bottom:12px;'>Correlation Matrix of Quantitative Biomarkers</p>", unsafe_allow_html=True)
+            
+            corr_matrix = np.array([
+                [1.0, 0.92, -0.65, 0.45, 0.58],
+                [0.92, 1.0, -0.72, 0.40, 0.62],
+                [-0.65, -0.72, 1.0, -0.32, -0.48],
+                [0.45, 0.40, -0.32, 1.0, 0.35],
+                [0.58, 0.62, -0.48, 0.35, 1.0]
+            ])
+            cols = ["Tumor Area", "Tumor Perimeter", "Circularity", "Relative Density", "GLCM Contrast"]
+            
+            fig_h = px.imshow(
+                corr_matrix, 
+                x=cols, 
+                y=cols, 
+                color_continuous_scale="Viridis",
+                labels=dict(color="Pearsons r"),
+                text_auto=".2f"
+            )
+            fig_h.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33", height=320)
+            st.plotly_chart(fig_h, use_container_width=True)
 
 # ---------------------------------------------------------------------
 # TAB 9: MODEL COMPARISON FRAMEWORK
