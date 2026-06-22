@@ -1091,13 +1091,13 @@ with tabs[9]:
             # Display runs in table
             runs_df = pd.DataFrame([
                 {
-                    "Timestamp": r["timestamp"],
-                    "Run Name": r["run_name"],
-                    "Patient": r["parameters"]["patient_id"],
-                    "Modality": r["parameters"]["pulse_sequence"],
-                    "Dice Score": f"{r['metrics']['dice_score']:.4f}",
-                    "Pred Prob": f"{r['metrics']['prediction_prob']:.4f}",
-                    "MLflow Server Log": "SUCCESS" if r["mlflow_integrated"] else "LOCAL LOCK"
+                    "Timestamp": r.get("timestamp", ""),
+                    "Run Name": r.get("run_name", ""),
+                    "Patient": r.get("parameters", {}).get("patient_id", "TRAINING_RUN"),
+                    "Modality": r.get("parameters", {}).get("pulse_sequence", "N/A"),
+                    "Dice Score": f"{r.get('metrics', {}).get('dice_score', r.get('metrics', {}).get('final_val_dice', 0.0)):.4f}",
+                    "Pred Prob": f"{r.get('metrics', {}).get('prediction_prob', r.get('metrics', {}).get('final_val_acc', 0.0)):.4f}",
+                    "MLflow Server Log": "SUCCESS" if r.get("mlflow_integrated", False) else "LOCAL LOCK"
                 }
                 for r in runs
             ])
