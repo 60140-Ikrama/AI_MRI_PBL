@@ -66,3 +66,15 @@ def test_cohens_d_and_bootstrap():
     assert "Empirical_CI" in boot
     assert len(boot["Empirical_CI"]) == 2
     assert boot["Empirical_CI"][0] < boot["Empirical_CI"][1]
+
+def test_mlflow_stats_logging():
+    from src.mlflow_stats_evaluator import evaluate_and_log_stats_to_mlflow
+    import os
+    
+    logged_run = evaluate_and_log_stats_to_mlflow()
+    
+    assert logged_run is not None
+    assert "metrics" in logged_run
+    assert "anova_f_statistic" in logged_run["metrics"]
+    assert "mcnemar_chi2" in logged_run["metrics"]
+    assert os.path.exists("mlflow_stats_results.json")
