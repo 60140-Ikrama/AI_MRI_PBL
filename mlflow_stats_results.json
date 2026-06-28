@@ -1,0 +1,34 @@
+{
+    "mcnemar_details": {
+        "Test": "McNemar Test",
+        "chi2_statistic": 0.1,
+        "p_value": 0.7518296340458492,
+        "Contingency_b": 6,
+        "Contingency_c": 4,
+        "Significant": false
+    },
+    "anova_details": {
+        "Test": "One-Way ANOVA",
+        "F_statistic": 58.248074725451694,
+        "p_value": 8.848974955837452e-17,
+        "Means": [
+            0.8330010527241094,
+            0.882635941520454,
+            0.9116625355734297
+        ],
+        "SEMs": [
+            0.006628673225279494,
+            0.004749591081488809,
+            0.0038725399113832644
+        ],
+        "Significant": true
+    },
+    "cohens_d": 2.5117814617961685,
+    "data_summary": {
+        "mean_dice_unet": 0.8330010527241094,
+        "mean_dice_att_unet": 0.882635941520454,
+        "mean_dice_unetpp": 0.9116625355734297,
+        "mean_acc_before": 0.8102745213137399,
+        "mean_acc_after": 0.8937681678141675
+    }
+}
