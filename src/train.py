@@ -97,8 +97,13 @@ def train_segmentation(epochs=3, batch_size=8, lr=1e-3, device="cpu"):
     Trains U-Net segmentation model.
     """
     print("\n--- Initializing Segmentation Model Training ---")
-    dataset_train = MRIDataset(mode="train", length=64, seed=42)
-    dataset_val = MRIDataset(mode="val", length=16, seed=1337)
+    if os.path.exists("data/train"):
+        dataset_train = MRIDataset(mode="train", local_dir="data/train")
+        dataset_val = MRIDataset(mode="val", local_dir="data/test")
+        print(f"[INFO] Loaded local dataset: {len(dataset_train)} training samples, {len(dataset_val)} testing/validation samples (70/30 split).")
+    else:
+        dataset_train = MRIDataset(mode="train", length=64, seed=42)
+        dataset_val = MRIDataset(mode="val", length=16, seed=1337)
     
     loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
@@ -176,8 +181,13 @@ def train_classification(epochs=3, batch_size=8, lr=1e-3, device="cpu"):
     Trains ResNet50/LightweightCNN classification model.
     """
     print("\n--- Initializing Classification Model Training ---")
-    dataset_train = MRIDataset(mode="train", length=64, seed=42)
-    dataset_val = MRIDataset(mode="val", length=16, seed=1337)
+    if os.path.exists("data/train"):
+        dataset_train = MRIDataset(mode="train", local_dir="data/train")
+        dataset_val = MRIDataset(mode="val", local_dir="data/test")
+        print(f"[INFO] Loaded local dataset: {len(dataset_train)} training samples, {len(dataset_val)} testing/validation samples (70/30 split).")
+    else:
+        dataset_train = MRIDataset(mode="train", length=64, seed=42)
+        dataset_val = MRIDataset(mode="val", length=16, seed=1337)
     
     loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)

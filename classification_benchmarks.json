@@ -1,0 +1,63 @@
+{
+    "individual_models": [
+        {
+            "Model": "MobileNetV2",
+            "Params": 27810,
+            "Memory_MB": 0.10608673095703125,
+            "Pipeline_A_Acc": 0.36666666666666664,
+            "Pipeline_A_Latency_ms": 13.854959979653358,
+            "Pipeline_B_Acc": 0.43333333333333335,
+            "Pipeline_B_Latency_ms": 24.420040003800146
+        },
+        {
+            "Model": "EfficientNetV2",
+            "Params": 106018,
+            "Memory_MB": 0.40442657470703125,
+            "Pipeline_A_Acc": 0.3333333333333333,
+            "Pipeline_A_Latency_ms": 19.242570002097636,
+            "Pipeline_B_Acc": 0.6,
+            "Pipeline_B_Latency_ms": 20.59520666565125
+        },
+        {
+            "Model": "DenseNet121",
+            "Params": 409890,
+            "Memory_MB": 1.5636062622070312,
+            "Pipeline_A_Acc": 0.5333333333333333,
+            "Pipeline_A_Latency_ms": 29.540843334204208,
+            "Pipeline_B_Acc": 0.5,
+            "Pipeline_B_Latency_ms": 29.81645333347842
+        },
+        {
+            "Model": "ResNet50",
+            "Params": 106018,
+            "Memory_MB": 0.40442657470703125,
+            "Pipeline_A_Acc": 0.5666666666666667,
+            "Pipeline_A_Latency_ms": 19.783709989860654,
+            "Pipeline_B_Acc": 0.5333333333333333,
+            "Pipeline_B_Latency_ms": 21.85522666744267
+        },
+        {
+            "Model": "Vision Transformer",
+            "Params": 229314,
+            "Memory_MB": 0.8747634887695312,
+            "Pipeline_A_Acc": 0.5,
+            "Pipeline_A_Latency_ms": 18.826886658401538,
+            "Pipeline_B_Acc": 0.43333333333333335,
+            "Pipeline_B_Latency_ms": 21.777633317591004
+        },
+        {
+            "Model": "Swin Transformer",
+            "Params": 154130,
+            "Memory_MB": 0.5879592895507812,
+            "Pipeline_A_Acc": 0.5666666666666667,
+            "Pipeline_A_Latency_ms": 30.078866662612803,
+            "Pipeline_B_Acc": 0.43333333333333335,
+            "Pipeline_B_Latency_ms": 40.51050667185336
+        }
+    ],
+    "ensemble": {
+        "Model": "ResNet50+ViT Ensemble",
+        "Pipeline_C_Acc": 0.5333333333333333,
+        "Pipeline_C_Latency_ms": 40.33664999296889
+    }
+}

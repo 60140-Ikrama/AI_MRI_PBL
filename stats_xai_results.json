@@ -1,0 +1,95 @@
+{
+    "xai": {
+        "Grad-CAM": {
+            "Overlap_IoU": 0.0,
+            "Focus_Category": "Incorrect Focus",
+            "Explainability_Confidence": 0.3938686966896057
+        },
+        "Grad-CAM++": {
+            "Overlap_IoU": 0.0,
+            "Focus_Category": "Incorrect Focus",
+            "Explainability_Confidence": 0.3938686966896057
+        },
+        "Score-CAM": {
+            "Overlap_IoU": 0.026031494140625,
+            "Focus_Category": "Incorrect Focus",
+            "Explainability_Confidence": 0.40428129434585575
+        },
+        "Integrated Gradients": {
+            "Overlap_IoU": 0.027359017308766054,
+            "Focus_Category": "Incorrect Focus",
+            "Explainability_Confidence": 0.40481230361311216
+        },
+        "Kernel SHAP": {
+            "Overlap_IoU": 0.0,
+            "Focus_Category": "Incorrect Focus",
+            "Explainability_Confidence": 0.3938686966896057
+        }
+    },
+    "statistical_tests": {
+        "anova_one_way": {
+            "Test": "One-Way ANOVA",
+            "F_statistic": 150.635217934405,
+            "p_value": 5.517526493316247e-29,
+            "Means": [
+                0.7989507685109406,
+                0.8913763215959527,
+                0.9463755544990218
+            ],
+            "SEMs": [
+                0.008165016250801009,
+                0.005468888007640136,
+                0.0037363833595165747
+            ],
+            "Significant": true
+        },
+        "anova_repeated_measures": {
+            "Test": "Repeated Measures ANOVA",
+            "F_statistic": 160.3530285739579,
+            "p_value": 0.0,
+            "df_models": 2,
+            "df_error": 58,
+            "Significant": true
+        },
+        "t_test_a_vs_b": {
+            "Test": "Paired t-test",
+            "t_statistic": -10.534611676563271,
+            "p_value": 1.9985713959841116e-11,
+            "Mean_Difference": -0.09242555308501217,
+            "Difference_CI": [
+                -0.11036940205293586,
+                -0.07448170411708849
+            ],
+            "Significant": true
+        },
+        "t_test_b_vs_c": {
+            "Test": "Paired t-test",
+            "t_statistic": -8.059171437343181,
+            "p_value": 6.900004576838539e-09,
+            "Mean_Difference": -0.05499923290306893,
+            "Difference_CI": [
+                -0.06895675475285842,
+                -0.04104171105327943
+            ],
+            "Significant": true
+        },
+        "cohens_d_a_vs_b": 2.4283501705718185,
+        "cohens_d_b_vs_c": 2.144029057698153,
+        "bootstrap_pipe_c": {
+            "Bootstrap_Mean": 0.9463562675303516,
+            "Empirical_CI": [
+                0.9391102113492173,
+                0.952478440596597
+            ],
+            "Resampling_Count": 500
+        },
+        "mcnemar_test": {
+            "Test": "McNemar Test",
+            "chi2_statistic": 3.2,
+            "p_value": 0.07363827012030257,
+            "Contingency_b": 0,
+            "Contingency_c": 5,
+            "Significant": false
+        }
+    }
+}

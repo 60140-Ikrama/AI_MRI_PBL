@@ -19,4 +19,4 @@ Write-Host "[INFO] Activating virtual environment..." -ForegroundColor Green
 Write-Host "[INFO] Launching PrognosAI-X Streamlit Medical Workstation..." -ForegroundColor Green
 Write-Host "[INFO] Press Ctrl+C in this terminal to stop the workstation server." -ForegroundColor Yellow
 
-streamlit run app/dashboard.py
+& ".\.venv\Scripts\python.exe" -m streamlit run app/dashboard.py

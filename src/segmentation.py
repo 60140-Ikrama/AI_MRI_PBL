@@ -322,21 +322,15 @@ def compute_boundary_f1(pred, target, threshold=0.5, d_threshold=3.0):
         return 1.0
     if len(p_pts) == 0 or len(t_pts) == 0:
         return 0.0
-        
     # Compute distances from pred boundary points to target boundary points
-    dists_p_to_t = []
-    for pt in p_pts:
-        dists = np.linalg.norm(t_pts - pt, axis=1)
-        dists_p_to_t.append(np.min(dists))
-        
-    dists_t_to_p = []
-    for pt in t_pts:
-        dists = np.linalg.norm(p_pts - pt, axis=1)
-        dists_t_to_p.append(np.min(dists))
-        
+    from scipy.spatial.distance import cdist
+    dists_matrix = cdist(p_pts, t_pts)
+    dists_p_to_t = np.min(dists_matrix, axis=1)
+    dists_t_to_p = np.min(dists_matrix, axis=0)
+    
     # Match within distance threshold
-    precision = np.mean(np.array(dists_p_to_t) <= d_threshold)
-    recall = np.mean(np.array(dists_t_to_p) <= d_threshold)
+    precision = np.mean(dists_p_to_t <= d_threshold)
+    recall = np.mean(dists_t_to_p <= d_threshold)
     
     if precision + recall == 0:
         return 0.0
