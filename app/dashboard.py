@@ -1,3 +1,8 @@
+import os
+import sys
+# Insert root directory to sys.path to guarantee import resolution on Streamlit Cloud
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import streamlit as st
 import numpy as np
 import pandas as pd
