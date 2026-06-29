@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 import numpy as np
 import pandas as pd
-import cv2
-import torch
+import cv2  # type: ignore
+import torch  # type: ignore
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
@@ -50,7 +50,7 @@ def load_uploaded_image(uploaded_file):
     try:
         if uploaded_file.name.lower().endswith(".dcm"):
             try:
-                import pydicom
+                import pydicom  # type: ignore
                 ds = pydicom.dcmread(io.BytesIO(uploaded_file.read()))
                 pixel_array = ds.pixel_array.astype(float)
                 pixel_array = (pixel_array - np.min(pixel_array)) / (np.max(pixel_array) - np.min(pixel_array) + 1e-8)
@@ -76,21 +76,21 @@ def generate_pdf_report(report_text, patient_id):
     
     # Header Styling
     pdf.set_font("Helvetica", 'B', 16)
-    pdf.cell(0, 10, txt="PrognosAI-X Clinical Workstation", ln=True, align='C')
+    pdf.cell(0, 10, "PrognosAI-X Clinical Workstation", ln=True, align='C')
     pdf.set_font("Helvetica", 'B', 12)
-    pdf.cell(0, 10, txt="Structured Brain Radiology Diagnostic Report", ln=True, align='C')
+    pdf.cell(0, 10, "Structured Brain Radiology Diagnostic Report", ln=True, align='C')
     pdf.ln(5)
     
     # Metadata Box
     pdf.set_font("Helvetica", 'B', 10)
-    pdf.cell(50, 8, txt="Patient Reference ID:", border=1)
+    pdf.cell(50, 8, "Patient Reference ID:", border=1)
     pdf.set_font("Helvetica", '', 10)
-    pdf.cell(140, 8, txt=f" {patient_id}", border=1, ln=True)
+    pdf.cell(140, 8, f" {patient_id}", border=1, ln=True)
     
     pdf.set_font("Helvetica", 'B', 10)
-    pdf.cell(50, 8, txt="Report Generation Date:", border=1)
+    pdf.cell(50, 8, "Report Generation Date:", border=1)
     pdf.set_font("Helvetica", '', 10)
-    pdf.cell(140, 8, txt=f" {time.strftime('%Y-%m-%d %H:%M:%S')}", border=1, ln=True)
+    pdf.cell(140, 8, f" {time.strftime('%Y-%m-%d %H:%M:%S')}", border=1, ln=True)
     pdf.ln(10)
     
     # Report body content
@@ -101,15 +101,15 @@ def generate_pdf_report(report_text, patient_id):
         if line_clean.strip().startswith("##"):
             pdf.ln(2)
             pdf.set_font("Helvetica", 'B', 12)
-            pdf.cell(0, 8, txt=line_clean.replace("##", "").strip(), ln=True)
+            pdf.cell(0, 8, line_clean.replace("##", "").strip(), ln=True)
             pdf.set_font("Helvetica", size=9)
         elif line_clean.strip().startswith("#"):
             pdf.ln(3)
             pdf.set_font("Helvetica", 'B', 14)
-            pdf.cell(0, 10, txt=line_clean.replace("#", "").strip(), ln=True)
+            pdf.cell(0, 10, line_clean.replace("#", "").strip(), ln=True)
             pdf.set_font("Helvetica", size=9)
         else:
-            pdf.multi_cell(0, 6, txt=line_clean)
+            pdf.multi_cell(0, 6, line_clean)
             
     # Save to workspace data directory and read back
     temp_dir = os.path.join(os.getcwd(), "data")
@@ -670,12 +670,17 @@ with tabs[0]:
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("🛠️ Advanced Diagnostic System Logs"):
         st.write("Live audit ledger query:")
-        logs = get_all_logs()
-        if logs:
-            log_df = pd.DataFrame(logs, columns=["ID", "Timestamp", "Action", "Patient ID", "Details"])
-            st.dataframe(log_df.sort_values(by="Timestamp", ascending=False), use_container_width=True)
-        else:
-            st.write("No audit entries recorded.")
+        try:
+            logs = get_audit_logs()
+            if logs:
+                # get_audit_logs returns dicts from sqlite3.Row, map to DataFrame
+                log_df = pd.DataFrame(logs)
+                st.dataframe(log_df.sort_values(by="timestamp", ascending=False), use_container_width=True)
+            else:
+                st.write("No audit entries recorded.")
+        except Exception as e:
+            st.warning("Could not load diagnostic logs. Ensure a patient session is initialized or database exists.")
+
             
     # Interactive Computational Path
     st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c; margin-top: 24px;">', unsafe_allow_html=True)
