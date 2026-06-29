@@ -46,6 +46,25 @@ from src.db_client import (
     get_cached_segmentation, cache_segmentation, save_scan_metrics
 )
 
+def initialize_session_state():
+    defaults = {
+        'tumor_size': 25,
+        't_y': 0.08,
+        't_x': -0.15,
+        'noise_level': 0.04,
+        'misalign': 0,
+        'z_offset': 0,
+        'mri_preprocessed': None,
+        'scan_loaded': False,
+        'enable_simulator': False
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+initialize_session_state()
+
+
 def load_uploaded_image(uploaded_file):
     try:
         if uploaded_file.name.lower().endswith(".dcm"):
@@ -421,26 +440,26 @@ with st.sidebar:
         st.subheader("Large Language Model")
         gemini_key = st.text_input("Gemini API Key (Required)", type="password", help="Enables live radiology report generation using Gemini Pro.")
     with st.sidebar.expander("🔬 Investigational Tools", expanded=False):
-        show_dev = st.toggle("Enable Research Scan Simulator", value=False)
-    if show_dev:
-        with st.expander("Scan Simulator Controls", expanded=True):
-            tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
-            t_y = st.slider("Tumor Relative Y", -0.4, 0.4, 0.08)
-            t_x = st.slider("Tumor Relative X", -0.4, 0.4, -0.15)
-            noise_level = st.slider("RF Channel Noise", 0.0, 0.15, 0.04, step=0.01)
-            misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
+        st.session_state.enable_simulator = st.toggle("Enable Research Scan Simulator", value=st.session_state.enable_simulator)
+    if st.session_state.enable_simulator:
+        with st.sidebar.expander("Scan Simulator Controls", expanded=True):
+            st.session_state.tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, st.session_state.tumor_size)
+            st.session_state.t_y = st.slider("Tumor Relative Y", -0.4, 0.4, st.session_state.t_y)
+            st.session_state.t_x = st.slider("Tumor Relative X", -0.4, 0.4, st.session_state.t_x)
+            st.session_state.noise_level = st.slider("RF Channel Noise", 0.0, 0.15, st.session_state.noise_level, step=0.01)
+            st.session_state.misalign = st.slider("Spatial Misalignment (px)", 0, 30, st.session_state.misalign)
             
             if st.button("Synthesize / Reload Active Scan"):
                 st.session_state.scan_loaded = True
                 img, mask = generate_synthetic_slice(
                     modality=st.session_state.modality,
                     tumor_present=True,
-                    tumor_size=tumor_size,
-                    tumor_loc=(t_y, t_x),
-                    noise_level=noise_level,
-                    misalign_x=float(misalign),
-                    misalign_y=float(misalign * 0.5),
-                    misalign_rot=float(misalign * 0.2),
+                    tumor_size=st.session_state.tumor_size,
+                    tumor_loc=(st.session_state.t_y, st.session_state.t_x),
+                    noise_level=st.session_state.noise_level,
+                    misalign_x=float(st.session_state.misalign),
+                    misalign_y=float(st.session_state.misalign * 0.5),
+                    misalign_rot=float(st.session_state.misalign * 0.2),
                     seed=None
                 )
                 st.session_state.mri_raw = img
@@ -1180,18 +1199,18 @@ with analyze_tabs[0]:
             # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling only if scan is loaded
             if st.session_state.scan_loaded:
                 z_center = 78
-                z_offset = abs(slice_z - z_center)
-                sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
+                st.session_state.z_offset = abs(slice_z - z_center)
+                sim_tumor_size = max(5, int(st.session_state.tumor_size * np.sqrt(max(0.0, 1.0 - (st.session_state.z_offset / 78.0)**2))))
             
                 img, mask = generate_synthetic_slice(
                     modality=st.session_state.modality,
                     tumor_present=True,
                     tumor_size=sim_tumor_size,
-                    tumor_loc=(t_y, t_x),
-                    noise_level=noise_level,
-                    misalign_x=float(misalign),
-                    misalign_y=float(misalign * 0.5),
-                    misalign_rot=float(misalign * 0.2),
+                    tumor_loc=(st.session_state.t_y, st.session_state.t_x),
+                    noise_level=st.session_state.noise_level,
+                    misalign_x=float(st.session_state.misalign),
+                    misalign_y=float(st.session_state.misalign * 0.5),
+                    misalign_rot=float(st.session_state.misalign * 0.2),
                     seed=slice_z
                 )
             
