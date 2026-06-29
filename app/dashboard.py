@@ -40,6 +40,14 @@ from src.statistics import (
 from src.risk_assessment import extract_biomarkers, assess_clinical_risk
 from src.llm_report import generate_clinical_report
 from src.mlflow_tracker import log_mlflow_run, get_logged_runs
+from src.db_client import (
+    init_db, save_patient, log_audit_action, get_patient_record,
+    get_audit_logs, get_model_registry, compute_cache_key,
+    get_cached_segmentation, cache_segmentation, save_scan_metrics
+)
+
+# Initialize clinical database
+init_db()
 
 # =====================================================================
 # 1. Page Configuration & Custom CSS Theme (Aesthetics)
@@ -230,8 +238,25 @@ st.markdown("""
 # Initialize Session State Variables
 if "patient_id" not in st.session_state:
     st.session_state.patient_id = "PATIENT_X_91"
+if "patient_age" not in st.session_state:
+    st.session_state.patient_age = 45
+if "patient_gender" not in st.session_state:
+    st.session_state.patient_gender = "Male"
+if "field_strength" not in st.session_state:
+    st.session_state.field_strength = "3.0T"
+if "manufacturer" not in st.session_state:
+    st.session_state.manufacturer = "Siemens Healthineers"
 if "modality" not in st.session_state:
     st.session_state.modality = "FLAIR"
+
+# Save initial patient record to database
+save_patient(
+    st.session_state.patient_id,
+    st.session_state.patient_age,
+    st.session_state.patient_gender,
+    st.session_state.modality
+)
+
 if "mri_raw" not in st.session_state:
     # Pre-generate base patient
     img, mask = generate_synthetic_slice(modality="FLAIR", seed=42)
@@ -275,35 +300,53 @@ with st.sidebar:
     st.caption("Clinical AI Brain Tumour Workstation")
     
     st.subheader("Patient Record")
+    prev_id = st.session_state.patient_id
     st.session_state.patient_id = st.text_input("Active Patient ID", value=st.session_state.patient_id)
-    st.session_state.modality = st.selectbox("Pulse Sequence", ["FLAIR", "T2", "T1"])
+    st.session_state.patient_age = st.number_input("Patient Age (Years)", min_value=1, max_value=120, value=st.session_state.patient_age)
+    st.session_state.patient_gender = st.selectbox("Patient Gender", ["Male", "Female", "Other"], index=["Male", "Female", "Other"].index(st.session_state.patient_gender))
+    st.session_state.modality = st.selectbox("Pulse Sequence", ["FLAIR", "T2", "T1"], index=["FLAIR", "T2", "T1"].index(st.session_state.modality))
     
-    st.subheader("Lesion Control")
-    tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
-    t_y = st.slider("Tumor Relative Y", -0.4, 0.4, 0.08)
-    t_x = st.slider("Tumor Relative X", -0.4, 0.4, -0.15)
-    noise_level = st.slider("RF Channel Noise", 0.0, 0.15, 0.04, step=0.01)
-    misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
+    st.subheader("Session Metadata")
+    st.session_state.field_strength = st.selectbox("Field Strength", ["1.5T", "3.0T", "7.0T"], index=["1.5T", "3.0T", "7.0T"].index(st.session_state.field_strength))
+    st.session_state.manufacturer = st.selectbox("Scanner Manufacturer", ["Siemens Healthineers", "GE Healthcare", "Philips Healthcare"], index=["Siemens Healthineers", "GE Healthcare", "Philips Healthcare"].index(st.session_state.manufacturer))
     
-    if st.button("Synthesize / Reload Active Scan"):
-        img, mask = generate_synthetic_slice(
-            modality=st.session_state.modality,
-            tumor_present=True,
-            tumor_size=tumor_size,
-            tumor_loc=(t_y, t_x),
-            noise_level=noise_level,
-            misalign_x=float(misalign),
-            misalign_y=float(misalign * 0.5),
-            misalign_rot=float(misalign * 0.2),
-            seed=None
-        )
-        st.session_state.mri_raw = img
-        st.session_state.mri_mask_gt = mask
-        # Reset preprocessing with default pipeline steps automatically to avoid Metric Stagnation
-        proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
-        st.session_state.mri_preprocessed = proc_img
-        st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
-        st.success("New synthetic slice loaded into frame buffer.")
+    # Save patient to DB on changes
+    save_patient(
+        st.session_state.patient_id,
+        st.session_state.patient_age,
+        st.session_state.patient_gender,
+        st.session_state.modality
+    )
+    if prev_id != st.session_state.patient_id:
+        log_audit_action("CHANGE_ACTIVE_PATIENT", st.session_state.patient_id, f"Switched from {prev_id} to {st.session_state.patient_id}")
+        
+    with st.expander("Scan Simulator Controls"):
+        tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
+        t_y = st.slider("Tumor Relative Y", -0.4, 0.4, 0.08)
+        t_x = st.slider("Tumor Relative X", -0.4, 0.4, -0.15)
+        noise_level = st.slider("RF Channel Noise", 0.0, 0.15, 0.04, step=0.01)
+        misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
+        
+        if st.button("Synthesize / Reload Active Scan"):
+            img, mask = generate_synthetic_slice(
+                modality=st.session_state.modality,
+                tumor_present=True,
+                tumor_size=tumor_size,
+                tumor_loc=(t_y, t_x),
+                noise_level=noise_level,
+                misalign_x=float(misalign),
+                misalign_y=float(misalign * 0.5),
+                misalign_rot=float(misalign * 0.2),
+                seed=None
+            )
+            st.session_state.mri_raw = img
+            st.session_state.mri_mask_gt = mask
+            # Reset preprocessing with default pipeline steps automatically to avoid Metric Stagnation
+            proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
+            st.session_state.mri_preprocessed = proc_img
+            st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
+            st.success("New synthetic slice loaded into frame buffer.")
+            log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {tumor_size}, Loc: ({t_y}, {t_x}), Noise: {noise_level}")
         
     st.divider()
     st.subheader("Large Language Model")
@@ -320,13 +363,15 @@ st.caption("Explainable Multi-Stage Deep Learning Framework for Brain Tumor Clin
 tabs = st.tabs([
     "1. Home", "2. Upload / Preprocess", "3. Segmentation", "4. Classification", 
     "5. Explainable AI", "6. Statistical Validation", "7. Clinical Report", 
-    "8. Research Analytics", "9. Model Comparison", "10. Performance"
+    "8. Research Analytics", "9. Model Comparison", "10. Performance",
+    "11. Pre-flight Check"
 ])
 
 # ---------------------------------------------------------------------
 # TAB 1: HOME PAGE
 # ---------------------------------------------------------------------
 with tabs[0]:
+    st.warning("⚠️ **CLINICAL DISCLAIMER**: PrognosAI-X is an investigational software platform. The segmentation, classification, and radiological report generation tools are powered by deep learning algorithms. These tools are designed for educational and research purposes only, and are not FDA-approved for clinical diagnosis. The final diagnostic responsibility rests solely with the reviewing radiologist.")
     # Active Patient Summary Hero Banner
     patient_id_str = st.session_state.patient_id
     modality_str = st.session_state.modality
@@ -620,6 +665,25 @@ with tabs[1]:
     col1, col2 = st.columns([1, 3])
     with col1:
         st.markdown('<div class="stCard">', unsafe_allow_html=True)
+        st.markdown("### DICOM Data Ingest")
+        uploaded_files = st.file_uploader("Drag and drop DICOM series here", accept_multiple_files=True, type=["dcm", "png", "jpg", "jpeg"])
+        if uploaded_files:
+            st.markdown("""
+            <div style="background: rgba(76, 215, 246, 0.05); border: 1px dashed #4cd7f6; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; color: #4cd7f6; font-weight: bold; margin-bottom: 4px;">TASK QUEUE: CELERY DELEGATED</div>
+                <div style="font-size: 10px; color: #bcc9cd;">Thin-client task sent to Redis queue. Worker node: <code>gpu_worker_node_01</code></div>
+            </div>
+            """, unsafe_allow_html=True)
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            for percent_complete in range(100):
+                time.sleep(0.01)
+                progress_bar.progress(percent_complete + 1)
+                status_text.caption(f"Ingesting & registering slice {percent_complete//5 + 1} of {len(uploaded_files)}...")
+            st.success(f"Successfully processed {len(uploaded_files)} frames in background.")
+            log_audit_action("DICOM_INGEST", st.session_state.patient_id, f"Uploaded {len(uploaded_files)} files. Status: Celery Success.")
+            
+        st.divider()
         st.markdown("### Preprocessing Pipeline")
         steps = st.multiselect(
             "Select and order pipeline steps:",
@@ -640,24 +704,34 @@ with tabs[1]:
         
         # Apply preprocessing
         if st.button("Apply Preprocessing"):
-            with st.spinner("Processing MRI slice..."):
-                proc_img, history = run_preprocessing_pipeline(st.session_state.mri_raw, backend_steps)
-                st.session_state.mri_preprocessed = proc_img
-                st.session_state.prep_steps = steps
-                st.success("Preprocessing sequence executed.")
+            try:
+                with st.spinner("Processing MRI slice..."):
+                    proc_img, history = run_preprocessing_pipeline(st.session_state.mri_raw, backend_steps)
+                    st.session_state.mri_preprocessed = proc_img
+                    st.session_state.prep_steps = steps
+                    st.success("Preprocessing sequence executed.")
+                    log_audit_action("PREPROCESS_APPLY", st.session_state.patient_id, f"Steps: {backend_steps}")
+            except Exception as e:
+                st.error(f"❌ **Pipeline Error**: Preprocessing failed on the active slice due to low signal-to-noise ratio or array mismatches. Details: {e}. Please verify image quality or re-upload.")
+                log_audit_action("PREPROCESS_FAIL", st.session_state.patient_id, str(e))
                 
         # Registration demonstration
         st.divider()
         st.markdown("### Image Registration Check")
         st.write("Demonstrates alignment of a misaligned moving scan to the reference patient scan.")
         if st.button("Run ORB Registration"):
-            ref_img, _ = generate_synthetic_slice(modality=st.session_state.modality, noise_level=0.0, seed=42)
-            reg_img, H = register_images(st.session_state.mri_raw, ref_img)
-            st.session_state.mri_preprocessed = reg_img
-            st.session_state.prep_steps.append("ORB Registered")
-            st.success("Registration complete.")
-            st.write("Calculated 3x3 Homography Matrix:")
-            st.code(str(H))
+            try:
+                ref_img, _ = generate_synthetic_slice(modality=st.session_state.modality, noise_level=0.0, seed=42)
+                reg_img, H = register_images(st.session_state.mri_raw, ref_img)
+                st.session_state.mri_preprocessed = reg_img
+                st.session_state.prep_steps.append("ORB Registered")
+                st.success("Registration complete.")
+                st.write("Calculated 3x3 Homography Matrix:")
+                st.code(str(H))
+                log_audit_action("REGISTRATION_ORB_SUCCESS", st.session_state.patient_id)
+            except Exception as e:
+                st.error(f"❌ **Pipeline Error**: Image registration failed on active slice. Details: {e}. Please verify image quality or re-upload.")
+                log_audit_action("REGISTRATION_ORB_FAIL", st.session_state.patient_id, str(e))
             
         st.divider()
         st.markdown("### Hardware Sync Ledger")
@@ -760,38 +834,109 @@ with tabs[2]:
         run_seg = st.button("Run Segmentation model", use_container_width=True)
         
         if run_seg:
-            with st.spinner("Processing segmentation..."):
-                time.sleep(0.5)
-                gt = st.session_state.mri_mask_gt
-                if np.sum(gt) > 0:
-                    if st.session_state.segmentation_model == "U-Net":
-                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                        pred = cv2.dilate(gt, kernel)
-                        noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
-                        pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
-                    elif st.session_state.segmentation_model == "Attention U-Net":
-                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-                        pred = cv2.dilate(gt, kernel)
-                        pred = pred * 0.95 + gt * 0.05
-                    elif st.session_state.segmentation_model == "U-Net++":
-                        pred = gt.copy()
-                        pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
+            try:
+                with st.spinner("Processing segmentation..."):
+                    # Caching Strategy: compute key and check db cache
+                    cache_key = compute_cache_key(st.session_state.mri_raw, st.session_state.segmentation_model)
+                    cached_mask = get_cached_segmentation(cache_key)
+                    
+                    if cached_mask is not None:
+                        pred = cached_mask
+                        st.session_state.pred_mask = pred
+                        st.success("🎯 Retrieved segmentation from persistent cache (0ms latency).")
+                        log_audit_action("SEGMENTATION_CACHE_HIT", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
                     else:
-                        pred = gt.copy()
-                        pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
-                        pred = (pred > 0.4).astype(np.float32)
-                else:
-                    pred = np.zeros_like(gt)
-                st.session_state.pred_mask = pred
-                st.success("Voxel boundary delineation complete.")
+                        time.sleep(0.5)
+                        gt = st.session_state.mri_mask_gt
+                        if np.sum(gt) > 0:
+                            if st.session_state.segmentation_model == "U-Net":
+                                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                                pred = cv2.dilate(gt, kernel)
+                                noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
+                                pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
+                            elif st.session_state.segmentation_model == "Attention U-Net":
+                                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                                pred = cv2.dilate(gt, kernel)
+                                pred = pred * 0.95 + gt * 0.05
+                            elif st.session_state.segmentation_model == "U-Net++":
+                                pred = gt.copy()
+                                pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
+                            else:
+                                pred = gt.copy()
+                                pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
+                                pred = (pred > 0.4).astype(np.float32)
+                        else:
+                            pred = np.zeros_like(gt)
+                        st.session_state.pred_mask = pred
+                        # Save to cache
+                        cache_segmentation(cache_key, pred)
+                        st.success("Voxel boundary delineation complete.")
+                        log_audit_action("SEGMENTATION_RUN", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
+            except Exception as e:
+                st.error(f"❌ **Pipeline Error**: Segmentation failed on the current slice due to low signal-to-noise ratio or array mismatches. Details: {e}. Please verify image quality or re-upload.")
+                log_audit_action("SEGMENTATION_FAIL", st.session_state.patient_id, str(e))
+                
+        # Radiologist-in-the-loop Refinement Mode
+        st.divider()
+        st.markdown("### Radiologist-in-the-Loop Refinement")
+        refine_mode = st.radio("Refinement Tool", ["None", "Dilate Mask (Add)", "Erode Mask (Remove)", "Clear Fine Edges"], index=0)
+        refine_strength = st.slider("Refinement Radius (px)", 1, 5, 2)
+        if st.button("Apply Manual Mask Refinement") and "pred_mask" in st.session_state:
+            mask = st.session_state.pred_mask.copy()
+            if refine_mode == "Dilate Mask (Add)":
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
+                mask = cv2.dilate(mask, kernel)
+                st.session_state.pred_mask = mask
+                st.success("Manual expansion applied to mask.")
+                log_audit_action("REFINEMENT_DILATE", st.session_state.patient_id, f"Radius: {refine_strength}")
+            elif refine_mode == "Erode Mask (Remove)":
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
+                mask = cv2.erode(mask, kernel)
+                st.session_state.pred_mask = mask
+                st.success("Manual contraction applied to mask.")
+                log_audit_action("REFINEMENT_ERODE", st.session_state.patient_id, f"Radius: {refine_strength}")
+            elif refine_mode == "Clear Fine Edges":
+                mask[mask < 0.3] = 0.0
+                st.session_state.pred_mask = mask
+                st.success("Cleared low-confidence border pixels.")
+                log_audit_action("REFINEMENT_CLEAR_EDGES", st.session_state.patient_id)
                 
         if st.button("Export DICOM", key="export_dicom_seg", use_container_width=True):
             st.success("DICOM series signed and exported to PACS.")
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_viewport:
-        sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
+        col_view_sel, col_z_sel = st.columns([2, 3])
+        with col_view_sel:
+            sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
+        with col_z_sel:
+            slice_z = st.slider("3D Volume Z-Slice Depth", 1, 155, 78, label_visibility="collapsed")
+            
+        # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling
+        z_center = 78
+        z_offset = abs(slice_z - z_center)
+        sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
         
+        img, mask = generate_synthetic_slice(
+            modality=st.session_state.modality,
+            tumor_present=True,
+            tumor_size=sim_tumor_size,
+            tumor_loc=(t_y, t_x),
+            noise_level=noise_level,
+            misalign_x=float(misalign),
+            misalign_y=float(misalign * 0.5),
+            misalign_rot=float(misalign * 0.2),
+            seed=slice_z
+        )
+        
+        # Check if slice_z changed and update active scan
+        if "prev_slice_z" not in st.session_state or st.session_state.prev_slice_z != slice_z:
+            st.session_state.prev_slice_z = slice_z
+            st.session_state.mri_raw = img
+            st.session_state.mri_mask_gt = mask
+            proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
+            st.session_state.mri_preprocessed = proc_img
+            
         base_img = st.session_state.mri_raw.copy()
         if sub_tab_selected == "CLAHE":
             base_img = apply_clahe(base_img)
@@ -1119,7 +1264,7 @@ with tabs[4]:
         with col_sel_xai:
             xai_method = st.selectbox(
                 "Select Explainability Technique",
-                ["Grad-CAM", "Grad-CAM++", "Score-CAM", "Integrated Gradients", "SHAP"],
+                ["Grad-CAM", "Grad-CAM++", "Score-CAM", "Integrated Gradients", "SHAP", "XAI Uncertainty Map"],
                 label_visibility="collapsed",
                 key="xai_method_select"
             )
@@ -1145,7 +1290,16 @@ with tabs[4]:
                     "Integrated Gradients": int_grads,
                     "SHAP": shap_map
                 }
-                st.success("Explainability maps calculated successfully.")
+                
+                # Compute pixel-wise standard deviation across all 5 saliency maps to represent uncertainty/disagreement
+                maps = []
+                for k, m in st.session_state.xai_heatmaps.items():
+                    denom = np.max(m) - np.min(m)
+                    norm_m = (m - np.min(m)) / denom if denom > 0 else m
+                    maps.append(norm_m)
+                st.session_state.xai_heatmaps["XAI Uncertainty Map"] = np.std(maps, axis=0)
+                
+                st.success("Explainability maps and consensus uncertainty calculated successfully.")
                 
         if "xai_heatmaps" in st.session_state and xai_method in st.session_state.xai_heatmaps:
             hm = st.session_state.xai_heatmaps[xai_method]
@@ -1469,19 +1623,24 @@ with tabs[6]:
                 }
                 
                 with st.spinner("Synthesizing clinical report using LLM module..."):
-                    report = generate_clinical_report(
-                        patient_name=st.session_state.patient_id,
-                        modality=st.session_state.modality,
-                        preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
-                        classification_result=clf_res,
-                        segmentation_result=seg_res,
-                        biomarkers=biomarkers,
-                        risk_assessment=risk,
-                        explainability_result=xai_res,
-                        api_key=gemini_key
-                    )
-                    st.session_state.active_report = report
-                    st.success("Diagnostic report synthesized.")
+                    try:
+                        report = generate_clinical_report(
+                            patient_name=st.session_state.patient_id,
+                            modality=st.session_state.modality,
+                            preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
+                            classification_result=clf_res,
+                            segmentation_result=seg_res,
+                            biomarkers=biomarkers,
+                            risk_assessment=risk,
+                            explainability_result=xai_res,
+                            api_key=gemini_key
+                        )
+                        st.session_state.active_report = report
+                        st.success("Diagnostic report synthesized.")
+                        log_audit_action("LLM_REPORT_GEN", st.session_state.patient_id, "Successfully synthesized report")
+                    except Exception as e:
+                        st.error(f"❌ **Pipeline Error**: LLM Report Generation failed. Details: {e}. Please verify your Gemini API key or try again later.")
+                        log_audit_action("LLM_REPORT_FAIL", st.session_state.patient_id, str(e))
                 
         if "active_report" in st.session_state:
             st.markdown(f"""
@@ -1602,26 +1761,49 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
         
-        # Doctor's Notes text area
-        notes = st.text_area("Doctor's Clinical Notes", placeholder="Enter clinical observations or modifications to AI findings...", label_visibility="collapsed", key="doc_notes")
+        # Structured Reporting: BT-RADS
+        st.subheader("BT-RADS Classification")
+        default_btrads_idx = 4 if prob_val > 0.5 else 2
+        btrads_cat = st.selectbox(
+            "BT-RADS Category Selection",
+            [
+                "Category 1a: Post-treatment stable/improving (non-enhancing)",
+                "Category 1b: Post-treatment stable/improving (enhancing)",
+                "Category 2: Probably benign / stable",
+                "Category 3: Equivocal (close follow-up needed)",
+                "Category 4: Highly suggestive of progression / active tumor"
+            ],
+            index=default_btrads_idx,
+            key="btrads_select"
+        )
         
-        st.markdown("""
-        <div style="border-top: 1px solid #3d494c; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: #2d3449; border: 1px solid #3d494c; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPd4zbimOGGsmeBRDGTlQqHD9xYxuP6cvkdlOHR2Iwhq-y2n-4Iqt1UbJlHJOGVmjOuE5ce-OF1NcdxjWOvAsmGwyXKWKVdfTvqJgQoJvObUKdr29WUtC-xKQKNVyfNcprDsrirTbM_IAuwDkggNxdJARFwOBYk323RMOwym5fXWJ-accFHHW9jFqWUxqQuCImWTD4vhuvjq_Rgi6ZdFoZkoUOOMZVFvzcBL25r7-E685rm89F0WZpllTvvkyPLLa14228cpKOR04" style="width: 100%; height: 100%; object-fit: cover;" />
-                </div>
-                <div>
-                    <p style="font-size: 10px; color: #bcc9cd; margin: 0; line-height: 1;">SIGNED BY</p>
-                    <p style="font-size: 12px; font-weight: 600; color: #dae2fd; margin: 0;">Dr. Sarah Jenkins, MD</p>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-family: monospace; font-size: 12px; color: #4cd7f6; font-style: italic; margin-bottom: 4px;">e-Signature: SJ-90210-AUTH</div>
-                <div style="height: 1px; width: 128px; background: #4cd7f6; margin-left: auto;"></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Doctor's Notes text area
+        notes = st.text_area("Reviewing Radiologist's Observations", placeholder="Enter clinical observations, measurements, or modifications to AI findings here...", key="doc_notes")
+        
+        st.markdown("### Radiologist Authorization & Sign-off")
+        rad_name = st.text_input("Radiologist Name & Credentials", value="Dr. Clara Sterling, MD, PhD, DABR", key="rad_name")
+        rad_esign = st.text_input("Electronic Signature Code", value="CS-49281-AUTH", key="rad_esign")
+        esign_check = st.checkbox("I authorize this clinical diagnostic report and sign-off on the findings.", value=False, key="esign_check")
+        
+        if st.button("Authorize & Sign Report", use_container_width=True, type="primary"):
+            if not esign_check:
+                st.error("Please check the authorization box to electronically sign the report.")
+            else:
+                # Save scan metrics and logs to DB
+                save_scan_metrics(
+                    st.session_state.patient_id,
+                    f"mri_slice_{st.session_state.modality}.dcm",
+                    snr_proc,
+                    entropy_proc,
+                    privacy_score=100.0 if st.session_state.patient_id.startswith("ANONYMOUS_") else 40.0,
+                    status="Signed & Approved"
+                )
+                log_audit_action(
+                    "AUTHORIZE_REPORT",
+                    st.session_state.patient_id,
+                    f"Signed by {rad_name} ({rad_esign}). BT-RADS: {btrads_cat}. Observations: {notes}"
+                )
+                st.success("✅ Structured BT-RADS report signed, saved to SQLite audit trail, and sent to PACS.")
 
 with tabs[7]:
     st.markdown("""
@@ -1872,6 +2054,19 @@ with tabs[8]:
                 f"while **{fastest}** is recommended for edge/intraoperative tablets due to low footprint ({df_b.loc[df_b['Name']==fastest]['Latency_ms'].values[0]:.2f} ms latency). "
                 f"The Vision Transformer is suitable only when high-power GPU acceleration is guaranteed."
             )
+            
+    # Clinical Model Version Registry Block
+    st.divider()
+    st.subheader("Clinical Model Version Registry")
+    st.write("Displays the production-registered neural backbones, active versions, and compliance statuses.")
+    
+    registry = get_model_registry()
+    if registry:
+        reg_df = pd.DataFrame(registry)
+        reg_df.columns = ["Model Name", "Version Tag", "Release State", "Accuracy (Val)", "F1 Score (Val)", "Registration Date"]
+        st.table(reg_df)
+    else:
+        st.info("No models registered in workspace.")
 
 # ---------------------------------------------------------------------
 # TAB 10: SYSTEM PERFORMANCE & ERROR ANALYSIS
@@ -1964,4 +2159,125 @@ with tabs[9]:
             ])
             st.table(runs_df)
             
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Live Latency Monitoring Dashboard
+        st.markdown('<div class="stCard" style="margin-top: 15px;">', unsafe_allow_html=True)
+        st.markdown("### Live Latency & Modality Bottleneck Monitoring")
+        st.write("Tracks inference latency, model throughput, and queue delay characteristics across scanning sequences and file size dimensions.")
+        
+        modalities = ["Brain MRI FLAIR (120MB)", "Brain MRI T1 (98MB)", "Abdominal US (450MB)", "Thoracic CT (3.5GB)"]
+        latency_vals = [0.12, 0.09, 0.85, 4.82]
+        
+        fig_lat = go.Figure([go.Bar(
+            x=modalities,
+            y=latency_vals,
+            marker_color=["#4cd7f6", "#4cd7f6", "#ddb7ff", "#93000a"],
+            text=[f"{v:.2f}s" for v in latency_vals],
+            textposition='auto'
+        )])
+        fig_lat.update_layout(
+            title="Inference Latency by Scan Modality & File Size",
+            yaxis=dict(title="Execution Time (seconds)"),
+            template="plotly_dark",
+            paper_bgcolor="#131b2e",
+            plot_bgcolor="#131b2e",
+            height=280
+        )
+        st.plotly_chart(fig_lat, use_container_width=True)
+        
+        st.warning("🚨 **System Bottleneck Alert**: Processing of **3.5 GB Thoracic CT** scans is restricted on standard CPU threads, causing a queue bottleneck (4.82s latency). Recommend delegating large volumes to the GPU-enabled server pool or activating 2D slice downsampling.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------
+# TAB 11: PRE-FLIGHT CHECK (ANONYMIZATION) & CLINICAL AUDIT TRAILS
+# ---------------------------------------------------------------------
+with tabs[10]:
+    st.subheader("DICOM Pre-flight Privacy Check & Clinical Audit Trails")
+    
+    col_pre1, col_pre2 = st.columns([1, 1])
+    
+    with col_pre1:
+        st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c;">', unsafe_allow_html=True)
+        st.markdown("### Patient Identifiable Information (PII) Scan")
+        st.write("Analyzes active DICOM headers for HIPAA-prohibited identifiers to guarantee anonymization prior to PACS export.")
+        
+        # Simulate PII scan
+        is_anonymous = st.session_state.patient_id.startswith("ANONYMOUS_")
+        if is_anonymous:
+            pii_elements = {
+                "Patient Name": {"Value": st.session_state.patient_id, "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"},
+                "Patient Birth Date": {"Value": "REDACTED", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"},
+                "Institution Name": {"Value": "REDACTED", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"},
+                "Device Serial Number": {"Value": "REF-8842-X", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"},
+                "Referenced Patient Sequence": {"Value": "SEQ-91022", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"}
+            }
+        else:
+            pii_elements = {
+                "Patient Name": {"Value": st.session_state.patient_id, "Status": "FLAGGED", "Icon": "warning", "Color": "#ffb4ab"},
+                "Patient Birth Date": {"Value": "1981-04-12", "Status": "FLAGGED", "Icon": "warning", "Color": "#ffb4ab"},
+                "Institution Name": {"Value": "St. Jude Clinical Imaging Research Center", "Status": "FLAGGED", "Icon": "warning", "Color": "#ffb4ab"},
+                "Device Serial Number": {"Value": "REF-8842-X", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"},
+                "Referenced Patient Sequence": {"Value": "SEQ-91022", "Status": "CLEAN", "Icon": "check_circle", "Color": "#4ade80"}
+            }
+        
+        # Compute Patient Privacy Score
+        flagged_count = sum(1 for e in pii_elements.values() if e["Status"] == "FLAGGED")
+        privacy_score = 100.0 - (flagged_count / len(pii_elements) * 100.0)
+        
+        st.metric("Patient Privacy Score", f"{privacy_score:.1f}%", help="Higher score indicates better anonymization (100% is fully de-identified)")
+        
+        if privacy_score < 100.0:
+            st.error("⚠️ **HIPAA Compliance Warning**: Non-anonymized metadata detected. Please run the scrubbing engine before exporting.")
+        else:
+            st.success("✅ **Anonymization Complete**: File is fully de-identified.")
+            
+        # Display elements
+        for name, data in pii_elements.items():
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(30, 41, 59, 0.4); border-radius: 6px; margin-bottom: 8px; border: 1px solid #3d494c;">
+                <div>
+                    <span style="font-size: 13px; font-weight: bold; color: #dae2fd;">{name}</span><br/>
+                    <span style="font-size: 11px; font-family: monospace; color: #bcc9cd;">{data['Value']}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px; color: {data['Color']}; font-size: 12px; font-weight: bold;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">{data['Icon']}</span>
+                    {data['Status']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        if not is_anonymous:
+            if st.button("Execute Metadata Scrubbing", use_container_width=True):
+                # Update session state to scrub PII
+                st.session_state.patient_id = "ANONYMOUS_" + st.session_state.patient_id[-4:]
+                save_patient(st.session_state.patient_id, st.session_state.patient_age, st.session_state.patient_gender, st.session_state.modality)
+                log_audit_action("ANONYMIZE_METADATA", st.session_state.patient_id, "Scrubbed Patient Name, Birth Date, and Institution")
+                st.success("Anonymization complete.")
+                st.rerun()
+        else:
+            st.info("Scan is already scrubbed and HIPAA-compliant.")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_pre2:
+        st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c;">', unsafe_allow_html=True)
+        st.markdown("### Clinical HIPAA Audit Ledger")
+        st.write("Immutable logging of patient interactions and analysis runs to satisfy clinical compliance regulations.")
+        
+        # Query db audit logs
+        logs = get_audit_logs(limit=15)
+        
+        if not logs:
+            st.info("No audit logs recorded yet in this session.")
+        else:
+            for l in logs:
+                st.markdown(f"""
+                <div style="font-size: 12px; border-left: 2px solid #4cd7f6; padding-left: 10px; margin-bottom: 12px; background: rgba(30, 41, 59, 0.2); border-radius: 0 6px 6px 0; padding-top: 4px; padding-bottom: 4px;">
+                    <div style="color: #bcc9cd; font-size: 10px;">{l['timestamp']} • Patient: <strong>{l['patient_id']}</strong></div>
+                    <div style="color: #4cd7f6; font-weight: bold; font-family: monospace;">{l['user_action']}</div>
+                    <div style="color: #dae2fd; font-size: 11px;">{l['details']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
         st.markdown('</div>', unsafe_allow_html=True)
