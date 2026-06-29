@@ -179,6 +179,15 @@ def run_preprocessing_pipeline(image, steps):
     Runs a list of preprocessing steps sequentially.
     steps: list of strings (e.g., ['strip', 'noise', 'clahe', 'norm'])
     """
+    # Sanitize input shape: ensure grayscale (2D)
+    if len(image.shape) == 3:
+        if image.shape[2] == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        elif image.shape[2] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+        else:
+            image = image[:, :, 0]
+            
     current_img = image.copy()
     history = {'original': image.copy()}
     

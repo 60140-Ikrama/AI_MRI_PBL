@@ -695,12 +695,21 @@ with tabs[1]:
             snr_proc = np.mean(proc_non_zero) / np.std(proc_non_zero) if len(proc_non_zero) > 0 and np.std(proc_non_zero) > 0 else 0
         
         # Calculate local entropy using a 10-level histogram
-        hist_r, _ = np.histogram(raw_non_zero, bins=10)
-        hist_p, _ = np.histogram(proc_non_zero, bins=10)
-        hist_r = hist_r / np.sum(hist_r)
-        hist_p = hist_p / np.sum(hist_p)
-        entropy_raw = -np.sum(hist_r * np.log2(hist_r + 1e-7))
-        entropy_proc = -np.sum(hist_p * np.log2(hist_p + 1e-7))
+        if len(raw_non_zero) > 0:
+            hist_r, _ = np.histogram(raw_non_zero, bins=10)
+            sum_r = np.sum(hist_r)
+            hist_r = hist_r / sum_r if sum_r > 0 else hist_r
+            entropy_raw = -np.sum(hist_r * np.log2(hist_r + 1e-7))
+        else:
+            entropy_raw = 0.0
+            
+        if len(proc_non_zero) > 0:
+            hist_p, _ = np.histogram(proc_non_zero, bins=10)
+            sum_p = np.sum(hist_p)
+            hist_p = hist_p / sum_p if sum_p > 0 else hist_p
+            entropy_proc = -np.sum(hist_p * np.log2(hist_p + 1e-7))
+        else:
+            entropy_proc = 0.0
         
         metrics_df = pd.DataFrame({
             "Metric": ["Signal-to-Noise Ratio (SNR)", "Entropy (Information)", "Active Pixel Count"],
