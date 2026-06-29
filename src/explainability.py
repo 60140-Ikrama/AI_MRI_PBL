@@ -317,10 +317,15 @@ def get_xai_visualization(image, heatmap, title="Grad-CAM"):
     # Apply JET colormap
     color_heatmap = cv2.applyColorMap(heatmap_u8, cv2.COLORMAP_JET)
     
-    # Convert image to BGR
-    img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
-    
-    # Overlay: 70% image, 30% heatmap
+    # Convert image to BGR if it is grayscale
+    if len(img_u8.shape) == 2:
+        img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
+    elif len(img_u8.shape) == 3 and img_u8.shape[2] == 1:
+        img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
+    else:
+        img_bgr = img_u8
+        
+    # Overlay: 60% image, 40% heatmap
     overlay = cv2.addWeighted(img_bgr, 0.6, color_heatmap, 0.4, 0)
     
     return overlay
