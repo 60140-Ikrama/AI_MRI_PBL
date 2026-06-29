@@ -350,7 +350,7 @@ with st.sidebar:
         
     st.divider()
     st.subheader("Large Language Model")
-    gemini_key = st.text_input("Gemini API Key (Optional)", type="password", help="Enables live radiology report generation using Gemini Pro.")
+    gemini_key = st.text_input("Gemini API Key (Required)", type="password", help="Enables live radiology report generation using Gemini Pro.")
     
     st.caption("System Status: **ONLINE (LOCAL)**")
 
@@ -1596,51 +1596,54 @@ with tabs[6]:
         risk = assess_clinical_risk(biomarkers, prob_val)
         
         if gen_rep:
-            # Clinical Trust Check: Require model confidence >= 85% to generate report
-            model_confidence = max(prob_val, 1.0 - prob_val)
-            if model_confidence < 0.85:
-                st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality.")
+            if not gemini_key or gemini_key.strip() == "":
+                st.error("⚠️ **API Key Required**: Gemini API Key is required to run LLM report generation. Please enter your API key in the sidebar to authorize synthesis.")
             else:
-                clf_res = {
-                    "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
-                    "Probability": prob_val,
-                    "Model": "Pipeline C (Ensemble)"
-                }
-                seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
-                seg_res = {
-                    "Model": st.session_state.segmentation_model,
-                    "Dice": seg_metrics["Dice"],
-                    "IoU": seg_metrics["IoU"]
-                }
-                h_overlap = 0.65
-                if "xai_heatmaps" in st.session_state:
-                    h_overlap, _ = evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-                
-                xai_res = {
-                    "Focus Category": "Correct Focus" if h_overlap > 0.45 else ("Partially Correct Focus" if h_overlap > 0.15 else "Incorrect Focus"),
-                    "Overlap IoU": h_overlap,
-                    "Confidence Score": compute_explainability_confidence(h_overlap, prob_val)
-                }
-                
-                with st.spinner("Synthesizing clinical report using LLM module..."):
-                    try:
-                        report = generate_clinical_report(
-                            patient_name=st.session_state.patient_id,
-                            modality=st.session_state.modality,
-                            preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
-                            classification_result=clf_res,
-                            segmentation_result=seg_res,
-                            biomarkers=biomarkers,
-                            risk_assessment=risk,
-                            explainability_result=xai_res,
-                            api_key=gemini_key
-                        )
-                        st.session_state.active_report = report
-                        st.success("Diagnostic report synthesized.")
-                        log_audit_action("LLM_REPORT_GEN", st.session_state.patient_id, "Successfully synthesized report")
-                    except Exception as e:
-                        st.error(f"❌ **Pipeline Error**: LLM Report Generation failed. Details: {e}. Please verify your Gemini API key or try again later.")
-                        log_audit_action("LLM_REPORT_FAIL", st.session_state.patient_id, str(e))
+                # Clinical Trust Check: Require model confidence >= 85% to generate report
+                model_confidence = max(prob_val, 1.0 - prob_val)
+                if model_confidence < 0.85:
+                    st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality.")
+                else:
+                    clf_res = {
+                        "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
+                        "Probability": prob_val,
+                        "Model": "Pipeline C (Ensemble)"
+                    }
+                    seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
+                    seg_res = {
+                        "Model": st.session_state.segmentation_model,
+                        "Dice": seg_metrics["Dice"],
+                        "IoU": seg_metrics["IoU"]
+                    }
+                    h_overlap = 0.65
+                    if "xai_heatmaps" in st.session_state:
+                        h_overlap, _ = evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
+                    
+                    xai_res = {
+                        "Focus Category": "Correct Focus" if h_overlap > 0.45 else ("Partially Correct Focus" if h_overlap > 0.15 else "Incorrect Focus"),
+                        "Overlap IoU": h_overlap,
+                        "Confidence Score": compute_explainability_confidence(h_overlap, prob_val)
+                    }
+                    
+                    with st.spinner("Synthesizing clinical report using LLM module..."):
+                        try:
+                            report = generate_clinical_report(
+                                patient_name=st.session_state.patient_id,
+                                modality=st.session_state.modality,
+                                preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
+                                classification_result=clf_res,
+                                segmentation_result=seg_res,
+                                biomarkers=biomarkers,
+                                risk_assessment=risk,
+                                explainability_result=xai_res,
+                                api_key=gemini_key
+                            )
+                            st.session_state.active_report = report
+                            st.success("Diagnostic report synthesized.")
+                            log_audit_action("LLM_REPORT_GEN", st.session_state.patient_id, "Successfully synthesized report")
+                        except Exception as e:
+                            st.error(f"❌ **Pipeline Error**: LLM Report Generation failed. Details: {e}. Please verify your Gemini API key or try again later.")
+                            log_audit_action("LLM_REPORT_FAIL", st.session_state.patient_id, str(e))
                 
         if "active_report" in st.session_state:
             st.markdown(f"""
