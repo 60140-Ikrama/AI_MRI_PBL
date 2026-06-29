@@ -469,7 +469,7 @@ with st.sidebar:
                 st.session_state.mri_preprocessed = proc_img
                 st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
                 st.success("New synthetic slice loaded into frame buffer.")
-                log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {tumor_size}, Loc: ({t_y}, {t_x}), Noise: {noise_level}")
+                log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {st.session_state.tumor_size}, Loc: ({st.session_state.t_y}, {st.session_state.t_x}), Noise: {st.session_state.noise_level}")
         
     st.divider()
     
