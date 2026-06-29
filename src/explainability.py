@@ -307,24 +307,51 @@ def get_xai_visualization(image, heatmap, title="Grad-CAM"):
     Generates a color overlay of the XAI heatmap onto the grayscale MRI.
     Uses JET colormap for hot spot visibility.
     """
-    # Resize heatmap to match image dimensions if they differ
-    if heatmap.shape != image.shape:
-        heatmap = cv2.resize(heatmap, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
+    if image is None or heatmap is None:
+        return np.zeros((256, 256, 3), dtype=np.uint8)
         
-    img_u8 = (np.clip(image, 0, 1) * 255).astype(np.uint8)
-    heatmap_u8 = (np.clip(heatmap, 0, 1) * 255).astype(np.uint8)
+    image = np.asarray(image, dtype=np.float32)
+    heatmap = np.asarray(heatmap, dtype=np.float32)
+    
+    # 1. Normalize image safely to [0, 1] range
+    img_min, img_max = np.min(image), np.max(image)
+    if img_max > img_min:
+        image_norm = (image - img_min) / (img_max - img_min)
+    else:
+        image_norm = np.zeros_like(image)
+        
+    # 2. Normalize heatmap safely to [0, 1] range
+    hm_min, hm_max = np.min(heatmap), np.max(heatmap)
+    if hm_max > hm_min:
+        heatmap_norm = (heatmap - hm_min) / (hm_max - hm_min)
+    else:
+        heatmap_norm = np.zeros_like(heatmap)
+        
+    # 3. Handle channel dims for resizing and grayscale matching
+    if len(image_norm.shape) == 3:
+        if image_norm.shape[2] == 1:
+            image_gray = image_norm[:, :, 0]
+        elif image_norm.shape[2] == 3:
+            image_gray = cv2.cvtColor(image_norm, cv2.COLOR_BGR2GRAY)
+        else:
+            image_gray = image_norm[:, :, 0]
+    else:
+        image_gray = image_norm
+        
+    # Resize heatmap to match grayscale image shape
+    if heatmap_norm.shape != image_gray.shape:
+        heatmap_norm = cv2.resize(heatmap_norm, (image_gray.shape[1], image_gray.shape[0]), interpolation=cv2.INTER_LINEAR)
+        
+    # Scale to uint8
+    img_u8 = (image_gray * 255).astype(np.uint8)
+    heatmap_u8 = (heatmap_norm * 255).astype(np.uint8)
     
     # Apply JET colormap
     color_heatmap = cv2.applyColorMap(heatmap_u8, cv2.COLORMAP_JET)
     
-    # Convert image to BGR if it is grayscale
-    if len(img_u8.shape) == 2:
-        img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
-    elif len(img_u8.shape) == 3 and img_u8.shape[2] == 1:
-        img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
-    else:
-        img_bgr = img_u8
-        
+    # Convert image to 3-channel BGR
+    img_bgr = cv2.cvtColor(img_u8, cv2.COLOR_GRAY2BGR)
+    
     # Overlay: 60% image, 40% heatmap
     overlay = cv2.addWeighted(img_bgr, 0.6, color_heatmap, 0.4, 0)
     
