@@ -1768,6 +1768,7 @@ with tabs[6]:
     with col_rep_left:
         # Run report generation
         gen_rep = st.button("Generate Diagnostic Report", key="run_report_main", use_container_width=True)
+        trust_override = st.toggle("Bypass Trust Check (Investigational Override)", value=False, help="Allow generation of reports for scans with confidence below 85% for research and validation purposes.")
         
         biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
         prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
@@ -1779,8 +1780,8 @@ with tabs[6]:
             else:
                 # Clinical Trust Check: Require model confidence >= 85% to generate report
                 model_confidence = max(prob_val, 1.0 - prob_val)
-                if model_confidence < 0.85:
-                    st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality.")
+                if model_confidence < 0.85 and not trust_override:
+                    st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality, or check 'Bypass Trust Check (Investigational Override)' to proceed.")
                 else:
                     clf_res = {
                         "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
