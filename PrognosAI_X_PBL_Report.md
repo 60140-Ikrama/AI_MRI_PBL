@@ -62,17 +62,17 @@ Below are the parameters, memory footprint, and average inference latency measur
 
 | Model Backbone | Parameters | Memory (MB) | Pipeline A Accuracy | Pipeline B Accuracy |
 | :--- | :---: | :---: | :---: | :---: |
-| MobileNetV2 | 27,810 | 0.106 MB | 36.7% | 43.3% |
-| EfficientNetV2 | 106,018 | 0.404 MB | 33.3% | 60.0% |
-| DenseNet121 | 409,890 | 1.564 MB | 53.3% | 50.0% |
-| ResNet50 | 106,018 | 0.404 MB | 56.7% | 53.3% |
-| Vision Transformer | 229,314 | 0.875 MB | 50.0% | 43.3% |
-| Swin Transformer | 154,130 | 0.588 MB | 56.7% | 43.3% |
+| MobileNetV2 | 27,810 | 0.106 MB | 66.7% | 53.3% |
+| EfficientNetV2 | 106,018 | 0.404 MB | 30.0% | 40.0% |
+| DenseNet121 | 409,890 | 1.564 MB | 33.3% | 63.3% |
+| ResNet50 | 106,018 | 0.404 MB | 60.0% | 56.7% |
+| Vision Transformer | 229,314 | 0.875 MB | 46.7% | 50.0% |
+| Swin Transformer | 154,130 | 0.588 MB | 43.3% | 36.7% |
 
 ### Pipeline C Ensemble Results
 - **Ensemble Architecture:** ResNet50 + Vision Transformer
-- **Pipeline C Accuracy:** `53.33%`
-- **Pipeline C Inference Latency:** `40.34 ms`
+- **Pipeline C Accuracy:** `66.67%`
+- **Pipeline C Inference Latency:** `40.06 ms`
 
 **Scientific Discussion:** The results show that Pipeline B (ROI-guided) consistently outperforms Pipeline A. By cropping the tumor region and applying safety padding, the classification backbones focus their learning capacity directly on tumor texture and borders rather than healthy tissue, leading to a substantial gain in accuracy. The CNN-ViT Ensemble (Pipeline C) achieves the highest stability by fusing local edge features from ResNet50 and global contextual relations from the Vision Transformer.
 
@@ -83,10 +83,10 @@ Voxel-level segmentation models were evaluated on the synthetic patient cohort u
 
 | Model Architecture | Dice Similarity | IoU | Precision | Recall | Hausdorff Distance | Boundary F1 | Latency (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| U-Net | 0.2035 | 0.1246 | 0.2318 | 0.1947 | 123.85 px | 0.2505 | 91.40 ms |
-| Attention U-Net | 0.0492 | 0.0253 | 0.0253 | 1.0000 | 202.79 px | 0.0000 | 97.74 ms |
-| U-Net++ | 0.0492 | 0.0253 | 0.0253 | 1.0000 | 202.79 px | 0.0000 | 179.82 ms |
-| Mask R-CNN | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 256.00 px | 0.0000 | 29.21 ms |
+| U-Net | 0.2035 | 0.1246 | 0.2318 | 0.1947 | 123.85 px | 0.2505 | 85.87 ms |
+| Attention U-Net | 0.0492 | 0.0253 | 0.0253 | 1.0000 | 202.79 px | 0.0000 | 102.48 ms |
+| U-Net++ | 0.0492 | 0.0253 | 0.0253 | 1.0000 | 202.79 px | 0.0000 | 241.72 ms |
+| Mask R-CNN | 0.0492 | 0.0253 | 0.0253 | 1.0000 | 202.79 px | 0.0000 | 34.40 ms |
 
 ### ROI Crop and Safety Margin
 A critical component of the multi-stage pipeline is the transition from segmentation to classification. Bounding boxes are dynamically calculated from the predicted segmentation mask. We apply a safety padding of **15 pixels** surrounding the tumor boundaries. This padding preserves the infiltrative margins of the tumor (edema ring), which are biologically active and contain key diagnostic texturing necessary for pathological classification.

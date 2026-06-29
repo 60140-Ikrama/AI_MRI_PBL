@@ -4,60 +4,60 @@
             "Model": "MobileNetV2",
             "Params": 27810,
             "Memory_MB": 0.10608673095703125,
-            "Pipeline_A_Acc": 0.36666666666666664,
-            "Pipeline_A_Latency_ms": 13.854959979653358,
-            "Pipeline_B_Acc": 0.43333333333333335,
-            "Pipeline_B_Latency_ms": 24.420040003800146
+            "Pipeline_A_Acc": 0.6666666666666666,
+            "Pipeline_A_Latency_ms": 17.071359999802855,
+            "Pipeline_B_Acc": 0.5333333333333333,
+            "Pipeline_B_Latency_ms": 18.089679999805714
         },
         {
             "Model": "EfficientNetV2",
             "Params": 106018,
             "Memory_MB": 0.40442657470703125,
-            "Pipeline_A_Acc": 0.3333333333333333,
-            "Pipeline_A_Latency_ms": 19.242570002097636,
-            "Pipeline_B_Acc": 0.6,
-            "Pipeline_B_Latency_ms": 20.59520666565125
+            "Pipeline_A_Acc": 0.3,
+            "Pipeline_A_Latency_ms": 26.75412333289084,
+            "Pipeline_B_Acc": 0.4,
+            "Pipeline_B_Latency_ms": 22.945093334055855
         },
         {
             "Model": "DenseNet121",
             "Params": 409890,
             "Memory_MB": 1.5636062622070312,
-            "Pipeline_A_Acc": 0.5333333333333333,
-            "Pipeline_A_Latency_ms": 29.540843334204208,
-            "Pipeline_B_Acc": 0.5,
-            "Pipeline_B_Latency_ms": 29.81645333347842
+            "Pipeline_A_Acc": 0.3333333333333333,
+            "Pipeline_A_Latency_ms": 30.052016666983643,
+            "Pipeline_B_Acc": 0.6333333333333333,
+            "Pipeline_B_Latency_ms": 29.409009999896323
         },
         {
             "Model": "ResNet50",
             "Params": 106018,
             "Memory_MB": 0.40442657470703125,
-            "Pipeline_A_Acc": 0.5666666666666667,
-            "Pipeline_A_Latency_ms": 19.783709989860654,
-            "Pipeline_B_Acc": 0.5333333333333333,
-            "Pipeline_B_Latency_ms": 21.85522666744267
+            "Pipeline_A_Acc": 0.6,
+            "Pipeline_A_Latency_ms": 27.812850000069982,
+            "Pipeline_B_Acc": 0.5666666666666667,
+            "Pipeline_B_Latency_ms": 23.689513332889568
         },
         {
             "Model": "Vision Transformer",
             "Params": 229314,
             "Memory_MB": 0.8747634887695312,
-            "Pipeline_A_Acc": 0.5,
-            "Pipeline_A_Latency_ms": 18.826886658401538,
-            "Pipeline_B_Acc": 0.43333333333333335,
-            "Pipeline_B_Latency_ms": 21.777633317591004
+            "Pipeline_A_Acc": 0.4666666666666667,
+            "Pipeline_A_Latency_ms": 24.5869366665526,
+            "Pipeline_B_Acc": 0.5,
+            "Pipeline_B_Latency_ms": 20.489363333520792
         },
         {
             "Model": "Swin Transformer",
             "Params": 154130,
             "Memory_MB": 0.5879592895507812,
-            "Pipeline_A_Acc": 0.5666666666666667,
-            "Pipeline_A_Latency_ms": 30.078866662612803,
-            "Pipeline_B_Acc": 0.43333333333333335,
-            "Pipeline_B_Latency_ms": 40.51050667185336
+            "Pipeline_A_Acc": 0.43333333333333335,
+            "Pipeline_A_Latency_ms": 32.24473999992673,
+            "Pipeline_B_Acc": 0.36666666666666664,
+            "Pipeline_B_Latency_ms": 37.63766999994308
         }
     ],
     "ensemble": {
         "Model": "ResNet50+ViT Ensemble",
-        "Pipeline_C_Acc": 0.5333333333333333,
-        "Pipeline_C_Latency_ms": 40.33664999296889
+        "Pipeline_C_Acc": 0.6666666666666666,
+        "Pipeline_C_Latency_ms": 40.05680999992668
     }
 }
