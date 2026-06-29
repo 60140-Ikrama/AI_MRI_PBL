@@ -46,6 +46,26 @@ from src.db_client import (
     get_cached_segmentation, cache_segmentation, save_scan_metrics
 )
 
+def load_uploaded_image(uploaded_file):
+    try:
+        if uploaded_file.name.lower().endswith(".dcm"):
+            try:
+                import pydicom
+                ds = pydicom.dcmread(io.BytesIO(uploaded_file.read()))
+                pixel_array = ds.pixel_array.astype(float)
+                pixel_array = (pixel_array - np.min(pixel_array)) / (np.max(pixel_array) - np.min(pixel_array) + 1e-8)
+                return cv2.resize(pixel_array, (256, 256)).astype(np.float32)
+            except Exception:
+                pass
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        img = cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            img = cv2.resize(img, (256, 256))
+            return img.astype(np.float32) / 255.0
+    except Exception as e:
+        print(f"Error loading image: {e}")
+    return None
+
 # Initialize clinical database
 init_db()
 
@@ -257,19 +277,18 @@ save_patient(
     st.session_state.modality
 )
 
+if "scan_loaded" not in st.session_state:
+    st.session_state.scan_loaded = False
 if "mri_raw" not in st.session_state:
-    # Pre-generate base patient
-    img, mask = generate_synthetic_slice(modality="FLAIR", seed=42)
-    st.session_state.mri_raw = img
-    st.session_state.mri_mask_gt = mask
+    # Initialize as blank canvas to require explicit upload or synthesis selection
+    st.session_state.mri_raw = np.zeros((256, 256), dtype=np.float32)
+    st.session_state.mri_mask_gt = np.zeros((256, 256), dtype=np.float32)
 if "mri_preprocessed" not in st.session_state:
-    # Run the default preprocessing pipeline on startup to avoid Metric Stagnation
-    proc_img, _ = run_preprocessing_pipeline(st.session_state.mri_raw, ["strip", "noise", "clahe", "norm"])
-    st.session_state.mri_preprocessed = proc_img
+    st.session_state.mri_preprocessed = np.zeros((256, 256), dtype=np.float32)
 if "prep_steps" not in st.session_state:
-    st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
+    st.session_state.prep_steps = []
 if "pred_mask" not in st.session_state:
-    st.session_state.pred_mask = np.zeros_like(st.session_state.mri_raw)
+    st.session_state.pred_mask = np.zeros((256, 256), dtype=np.float32)
 if "segmentation_model" not in st.session_state:
     st.session_state.segmentation_model = "Attention U-Net"
 if "classification_model" not in st.session_state:
@@ -328,6 +347,7 @@ with st.sidebar:
         misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
         
         if st.button("Synthesize / Reload Active Scan"):
+            st.session_state.scan_loaded = True
             img, mask = generate_synthetic_slice(
                 modality=st.session_state.modality,
                 tumor_present=True,
@@ -680,7 +700,20 @@ with tabs[1]:
                 time.sleep(0.01)
                 progress_bar.progress(percent_complete + 1)
                 status_text.caption(f"Ingesting & registering slice {percent_complete//5 + 1} of {len(uploaded_files)}...")
-            st.success(f"Successfully processed {len(uploaded_files)} frames in background.")
+            
+            # Load the first uploaded file into the active workspace!
+            uploaded_img = load_uploaded_image(uploaded_files[0])
+            if uploaded_img is not None:
+                st.session_state.mri_raw = uploaded_img
+                # Generate a blank ground truth mask for metrics
+                st.session_state.mri_mask_gt = np.zeros_like(uploaded_img)
+                # Automatically preprocess
+                proc_img, _ = run_preprocessing_pipeline(uploaded_img, ["strip", "noise", "clahe", "norm"])
+                st.session_state.mri_preprocessed = proc_img
+                st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
+                st.session_state.pred_mask = np.zeros_like(uploaded_img)
+            
+            st.success(f"Successfully processed {len(uploaded_files)} frames in background. Active workspace updated with uploaded scan series.")
             
             # Show detailed upload table response
             files_info = []
@@ -688,11 +721,10 @@ with tabs[1]:
                 files_info.append({
                     "Filename": f.name,
                     "Size": f"{f.size / 1024:.1f} KB",
-                    "Ingest Status": "Cached & Queued",
+                    "Ingest Status": "Active & Queued",
                     "PACS Sync": "Sync Pending"
                 })
             st.table(pd.DataFrame(files_info))
-            st.info("ℹ️ **Active Viewport Preserved**: The active workspace scan is not overwritten. Uploaded series are queued for subsequent batch sessions.")
             log_audit_action("DICOM_INGEST", st.session_state.patient_id, f"Uploaded {len(uploaded_files)} files. Status: Celery Success.")
             
         st.divider()
@@ -762,6 +794,9 @@ with tabs[1]:
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col2:
+        if np.sum(st.session_state.mri_raw) == 0:
+            st.info("ℹ️ **No Scan Active**: The workstation viewport is empty. Please drag and drop a scan series on the left, or use the sidebar 'Synthesize' tool to populate the workstation frame buffer.")
+            
         col_img1, col_img2 = st.columns(2)
         with col_img1:
             st.image(st.session_state.mri_raw, caption="Original Input MRI", use_container_width=True, clamp=True)
@@ -918,36 +953,39 @@ with tabs[2]:
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_viewport:
+        if not st.session_state.scan_loaded:
+            st.info("ℹ️ **No Scan Loaded**: The active workstation viewport is currently empty. Please drag and drop a scan series in Tab 2, or use the sidebar 'Synthesize' tool to populate the workstation frame buffer.")
         col_view_sel, col_z_sel = st.columns([2, 3])
         with col_view_sel:
             sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
         with col_z_sel:
             slice_z = st.slider("3D Volume Z-Slice Depth", 1, 155, 78, label_visibility="collapsed")
             
-        # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling
-        z_center = 78
-        z_offset = abs(slice_z - z_center)
-        sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
-        
-        img, mask = generate_synthetic_slice(
-            modality=st.session_state.modality,
-            tumor_present=True,
-            tumor_size=sim_tumor_size,
-            tumor_loc=(t_y, t_x),
-            noise_level=noise_level,
-            misalign_x=float(misalign),
-            misalign_y=float(misalign * 0.5),
-            misalign_rot=float(misalign * 0.2),
-            seed=slice_z
-        )
-        
-        # Check if slice_z changed and update active scan
-        if "prev_slice_z" not in st.session_state or st.session_state.prev_slice_z != slice_z:
-            st.session_state.prev_slice_z = slice_z
-            st.session_state.mri_raw = img
-            st.session_state.mri_mask_gt = mask
-            proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
-            st.session_state.mri_preprocessed = proc_img
+        # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling only if scan is loaded
+        if st.session_state.scan_loaded:
+            z_center = 78
+            z_offset = abs(slice_z - z_center)
+            sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
+            
+            img, mask = generate_synthetic_slice(
+                modality=st.session_state.modality,
+                tumor_present=True,
+                tumor_size=sim_tumor_size,
+                tumor_loc=(t_y, t_x),
+                noise_level=noise_level,
+                misalign_x=float(misalign),
+                misalign_y=float(misalign * 0.5),
+                misalign_rot=float(misalign * 0.2),
+                seed=slice_z
+            )
+            
+            # Check if slice_z changed and update active scan
+            if "prev_slice_z" not in st.session_state or st.session_state.prev_slice_z != slice_z:
+                st.session_state.prev_slice_z = slice_z
+                st.session_state.mri_raw = img
+                st.session_state.mri_mask_gt = mask
+                proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
+                st.session_state.mri_preprocessed = proc_img
             
         base_img = st.session_state.mri_raw.copy()
         if sub_tab_selected == "CLAHE":
