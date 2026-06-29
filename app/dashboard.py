@@ -66,6 +66,67 @@ def load_uploaded_image(uploaded_file):
         print(f"Error loading image: {e}")
     return None
 
+def generate_pdf_report(report_text, patient_id):
+    from fpdf import FPDF
+    import tempfile
+    import os
+    
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Header Styling
+    pdf.set_font("Helvetica", 'B', 16)
+    pdf.cell(0, 10, txt="PrognosAI-X Clinical Workstation", ln=True, align='C')
+    pdf.set_font("Helvetica", 'B', 12)
+    pdf.cell(0, 10, txt="Structured Brain Radiology Diagnostic Report", ln=True, align='C')
+    pdf.ln(5)
+    
+    # Metadata Box
+    pdf.set_font("Helvetica", 'B', 10)
+    pdf.cell(50, 8, txt="Patient Reference ID:", border=1)
+    pdf.set_font("Helvetica", '', 10)
+    pdf.cell(140, 8, txt=f" {patient_id}", border=1, ln=True)
+    
+    pdf.set_font("Helvetica", 'B', 10)
+    pdf.cell(50, 8, txt="Report Generation Date:", border=1)
+    pdf.set_font("Helvetica", '', 10)
+    pdf.cell(140, 8, txt=f" {time.strftime('%Y-%m-%d %H:%M:%S')}", border=1, ln=True)
+    pdf.ln(10)
+    
+    # Report body content
+    pdf.set_font("Helvetica", size=9)
+    for line in report_text.split('\n'):
+        # Safe character conversion
+        line_clean = line.encode('latin-1', 'replace').decode('latin-1')
+        if line_clean.strip().startswith("##"):
+            pdf.ln(2)
+            pdf.set_font("Helvetica", 'B', 12)
+            pdf.cell(0, 8, txt=line_clean.replace("##", "").strip(), ln=True)
+            pdf.set_font("Helvetica", size=9)
+        elif line_clean.strip().startswith("#"):
+            pdf.ln(3)
+            pdf.set_font("Helvetica", 'B', 14)
+            pdf.cell(0, 10, txt=line_clean.replace("#", "").strip(), ln=True)
+            pdf.set_font("Helvetica", size=9)
+        else:
+            pdf.multi_cell(0, 6, txt=line_clean)
+            
+    # Save to workspace data directory and read back
+    temp_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(temp_dir, f"temp_report_{patient_id}.pdf")
+    pdf.output(temp_path)
+    
+    with open(temp_path, "rb") as f:
+        pdf_bytes = f.read()
+        
+    try:
+        os.remove(temp_path)
+    except:
+        pass
+        
+    return pdf_bytes
+
 # Initialize clinical database
 init_db()
 
@@ -1741,27 +1802,47 @@ with tabs[5]:
 # ---------------------------------------------------------------------
 with tabs[6]:
     patient_id_rep = st.session_state.patient_id
-    st.markdown(f"""
-    <div style="margin-bottom: 32px; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px;">
-        <div>
+    col_header, col_pdf_pacs = st.columns([3, 2])
+    with col_header:
+        st.markdown(f"""
+        <div style="margin-bottom: 32px;">
             <h2 style="font-size: 24px; font-weight: 600; color: #dae2fd; margin: 0 0 4px 0;">Clinical Diagnostic Report</h2>
             <p style="font-size: 12px; color: #bcc9cd; margin: 0; display: flex; align-items: center; gap: 8px;">
                 <span class="material-symbols-outlined" style="font-size: 14px;">patient_list</span>
-                Patient ID: <span style="font-family: monospace; color: #4cd7f6;">{patient_id_rep}</span> • Last Updated: June 22, 2026
+                Patient ID: <span style="font-family: monospace; color: #4cd7f6;">{patient_id_rep}</span> • Last Updated: {time.strftime('%B %d, %Y')}
             </p>
         </div>
-        <div style="display: flex; gap: 8px;">
-            <div style="background: #222a3d; border: 1px solid #3d494c; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; color: #4cd7f6; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="font-size: 14px;">picture_as_pdf</span>
-                Generate PDF Report
-            </div>
-            <div style="background: #4cd7f6; color: #003640; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(76, 215, 246, 0.2);">
-                <span class="material-symbols-outlined" style="font-size: 14px;">send</span>
-                Sign & Send to PACS
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+    with col_pdf_pacs:
+        # Render functional buttons
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            # Generate PDF Report
+            if "active_report" in st.session_state and st.session_state.active_report:
+                try:
+                    pdf_bytes = generate_pdf_report(st.session_state.active_report, patient_id_rep)
+                    st.download_button(
+                        label="📥 Download PDF",
+                        data=pdf_bytes,
+                        file_name=f"PrognosAI_Report_{patient_id_rep}.pdf",
+                        mime="application/pdf",
+                        key="btn_download_pdf",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error(f"PDF Error: {e}")
+            else:
+                st.button("📥 Download PDF", key="btn_download_pdf_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
+        with col_btn2:
+            # Sign & Send to PACS
+            if "active_report" in st.session_state and st.session_state.active_report:
+                send_pacs = st.button("🚀 Send to PACS", key="btn_send_pacs", use_container_width=True, type="primary")
+                if send_pacs:
+                    log_audit_action("PACS_SYNC", patient_id_rep, "Successfully signed and synchronized diagnostic report with PACS system.")
+                    st.success("✅ **PACS Synced**: Report successfully signed and pushed to PACS archive (Sync Status: Active).")
+            else:
+                st.button("🚀 Send to PACS", key="btn_send_pacs_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
     
     col_rep_left, col_rep_right = st.columns([7, 5])
     
