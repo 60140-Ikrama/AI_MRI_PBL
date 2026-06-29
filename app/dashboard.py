@@ -796,7 +796,7 @@ with tabs[2]:
         if sub_tab_selected == "CLAHE":
             base_img = apply_clahe(base_img)
         elif sub_tab_selected == "Skull Stripped":
-            base_img = skull_strip(base_img)
+            base_img, _ = skull_strip(base_img)
             
         adjusted_img = np.clip((base_img - 0.5) * contrast_val + 0.5 + (brightness_val - 1.0), 0.0, 1.0)
         
