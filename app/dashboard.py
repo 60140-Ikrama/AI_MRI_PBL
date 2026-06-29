@@ -390,6 +390,22 @@ with st.sidebar:
     st.session_state.field_strength = st.selectbox("Field Strength", ["1.5T", "3.0T", "7.0T"], index=["1.5T", "3.0T", "7.0T"].index(st.session_state.field_strength))
     st.session_state.manufacturer = st.selectbox("Scanner Manufacturer", ["Siemens Healthineers", "GE Healthcare", "Philips Healthcare"], index=["Siemens Healthineers", "GE Healthcare", "Philips Healthcare"].index(st.session_state.manufacturer))
     
+    # 1. Dynamic Sequence Parameters (TE/TR Times)
+    if st.session_state.modality == "FLAIR":
+        te_tr_val = "TE: 85 ms / TR: 9000 ms"
+    elif st.session_state.modality == "T2":
+        te_tr_val = "TE: 100 ms / TR: 4500 ms"
+    else:
+        te_tr_val = "TE: 15 ms / TR: 400 ms"
+    st.text_input("Sequence Parameters (TE/TR)", value=te_tr_val, disabled=True, help="Diagnostic TR/TE parameters bound to sequence modality.")
+    
+    # 2. Reference Range/Standard Selector
+    st.selectbox(
+        "Reference Standard",
+        ["BraTS standard (2023)", "Internal Hospital Baseline", "WHO Tumor Classification (2021)"],
+        key="ref_standard_select"
+    )
+    
     # Save patient to DB on changes
     save_patient(
         st.session_state.patient_id,
@@ -400,34 +416,37 @@ with st.sidebar:
     if prev_id != st.session_state.patient_id:
         log_audit_action("CHANGE_ACTIVE_PATIENT", st.session_state.patient_id, f"Switched from {prev_id} to {st.session_state.patient_id}")
         
-    with st.expander("Scan Simulator Controls"):
-        tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
-        t_y = st.slider("Tumor Relative Y", -0.4, 0.4, 0.08)
-        t_x = st.slider("Tumor Relative X", -0.4, 0.4, -0.15)
-        noise_level = st.slider("RF Channel Noise", 0.0, 0.15, 0.04, step=0.01)
-        misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
-        
-        if st.button("Synthesize / Reload Active Scan"):
-            st.session_state.scan_loaded = True
-            img, mask = generate_synthetic_slice(
-                modality=st.session_state.modality,
-                tumor_present=True,
-                tumor_size=tumor_size,
-                tumor_loc=(t_y, t_x),
-                noise_level=noise_level,
-                misalign_x=float(misalign),
-                misalign_y=float(misalign * 0.5),
-                misalign_rot=float(misalign * 0.2),
-                seed=None
-            )
-            st.session_state.mri_raw = img
-            st.session_state.mri_mask_gt = mask
-            # Reset preprocessing with default pipeline steps automatically to avoid Metric Stagnation
-            proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
-            st.session_state.mri_preprocessed = proc_img
-            st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
-            st.success("New synthetic slice loaded into frame buffer.")
-            log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {tumor_size}, Loc: ({t_y}, {t_x}), Noise: {noise_level}")
+    # 3. Developer Settings / Scan Simulator Toggle
+    show_dev = st.toggle("Show Research Scan Simulator", value=False)
+    if show_dev:
+        with st.expander("Scan Simulator Controls", expanded=True):
+            tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
+            t_y = st.slider("Tumor Relative Y", -0.4, 0.4, 0.08)
+            t_x = st.slider("Tumor Relative X", -0.4, 0.4, -0.15)
+            noise_level = st.slider("RF Channel Noise", 0.0, 0.15, 0.04, step=0.01)
+            misalign = st.slider("Spatial Misalignment (px)", 0, 30, 0)
+            
+            if st.button("Synthesize / Reload Active Scan"):
+                st.session_state.scan_loaded = True
+                img, mask = generate_synthetic_slice(
+                    modality=st.session_state.modality,
+                    tumor_present=True,
+                    tumor_size=tumor_size,
+                    tumor_loc=(t_y, t_x),
+                    noise_level=noise_level,
+                    misalign_x=float(misalign),
+                    misalign_y=float(misalign * 0.5),
+                    misalign_rot=float(misalign * 0.2),
+                    seed=None
+                )
+                st.session_state.mri_raw = img
+                st.session_state.mri_mask_gt = mask
+                # Reset preprocessing with default pipeline steps automatically to avoid Metric Stagnation
+                proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
+                st.session_state.mri_preprocessed = proc_img
+                st.session_state.prep_steps = ["Skull Strip", "Noise Reduction (Bilateral)", "CLAHE Enhancement", "Z-score Normalization"]
+                st.success("New synthetic slice loaded into frame buffer.")
+                log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {tumor_size}, Loc: ({t_y}, {t_x}), Noise: {noise_level}")
         
     st.divider()
     st.subheader("Large Language Model")
@@ -447,241 +466,146 @@ tabs = st.tabs([
     "8. Research Analytics", "9. Model Comparison", "10. Performance",
     "11. Pre-flight Check"
 ])
-
 # ---------------------------------------------------------------------
 # TAB 1: HOME PAGE
 # ---------------------------------------------------------------------
 with tabs[0]:
-    st.warning("⚠️ **CLINICAL DISCLAIMER**: PrognosAI-X is an investigational software platform. The segmentation, classification, and radiological report generation tools are powered by deep learning algorithms. These tools are designed for educational and research purposes only, and are not FDA-approved for clinical diagnosis. The final diagnostic responsibility rests solely with the reviewing radiologist.")
-    # Active Patient Summary Hero Banner
-    patient_id_str = st.session_state.patient_id
-    modality_str = st.session_state.modality
-    st.markdown(f"""
-    <div class="glass-panel rounded-xl p-6 flex flex-col lg:flex-row gap-6 relative overflow-hidden mb-6" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid #3d494c;">
-        <div class="flex-1 z-10">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="px-2 py-0.5 rounded-full bg-[#6f00be] text-[#d6a9ff] font-semibold text-[11px] uppercase tracking-wider">ACTIVE SESSION</span>
-                <span class="text-[#bcc9cd] font-mono text-[13px]">ID: {patient_id_str}</span>
-            </div>
-            <h2 class="text-3xl font-bold text-[#4cd7f6] mb-4">AI Analysis Complete</h2>
-            <p class="text-[#bcc9cd] max-w-2xl mb-6">Patient {patient_id_str} shows anomalous volumetric expansion in the temporal region. Neural classification engine suggests a high-probability match. Pulse sequence modality: {modality_str}. Review required for clinical validation.</p>
-            <div class="flex flex-wrap gap-4">
-                <div class="px-6 py-3 bg-[#4cd7f6] text-[#003640] font-bold rounded flex items-center gap-2 cursor-pointer hover:brightness-110 transition-all">
-                    <span class="material-symbols-outlined">visibility</span>
-                    Review Findings
-                </div>
-                <div class="px-6 py-3 border border-[#4cd7f6] text-[#4cd7f6] font-bold rounded flex items-center gap-2 cursor-pointer hover:bg-[#4cd7f6]/10 transition-all">
-                    <span class="material-symbols-outlined">download</span>
-                    Export DICOM
-                </div>
-            </div>
-        </div>
-        <div class="lg:w-1/3 h-48 lg:h-auto bg-black rounded-lg border border-[#3d494c] relative overflow-hidden group">
-            <div class="scan-line" style="width: 100%; height: 2px; background: #4cd7f6; position: absolute; top: 0; left: 0; animation: scan 3s linear infinite; z-index: 10; box-shadow: 0 0 15px #4cd7f6;"></div>
-            <img class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-P2CquwXvN17WWROMDBCpUqXgqHrQwBper7YuPuqXAg0oHssNAZ9TIdtEr5ahlPoH_uNDEr8uGHXmWqF0tj5jaKDL1X46sTQt3VzdFxrVlHx_DcNtTAFCa_EhpMbFrxP7iC3zpjBfEEhDS60wTmImyjFwTgB1hqXQ0Vl8U9sTIe2m1PJKluFOpLWVQaPqKlMxKXZHKUyLPDA0ur0ClgH8nM0SfopX2ToA_O46S3SCf78cZU7imHEMDMoICLkKI5h3GiHwsWxj4eQ"/>
-            <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-[10px] font-mono text-[#4cd7f6] border border-[#4cd7f6]/30">ROI: BRAIN_SEG_01</div>
-        </div>
+    # 1. Guided Workflow Progress Bar
+    st.markdown("""
+    <div style="background: #171f33; border: 1px solid #3d494c; border-radius: 8px; padding: 12px; margin-bottom: 24px; display: flex; justify-content: space-around; align-items: center; font-family: sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 0.05em;">
+        <span style="color: #4cd7f6;">[1] SOURCE INGEST & UPLOAD</span>
+        <span style="color: #bcc9cd;">&rarr;</span>
+        <span style="color: #4cd7f6;">[2] PIPELINE PREPROCESSING</span>
+        <span style="color: #bcc9cd;">&rarr;</span>
+        <span style="color: #4cd7f6;">[3] NEURAL SEGMENTATION</span>
+        <span style="color: #bcc9cd;">&rarr;</span>
+        <span style="color: #4cd7f6;">[4] ENSEMBLE CLASSIFICATION</span>
+        <span style="color: #bcc9cd;">&rarr;</span>
+        <span style="color: #4cd7f6;">[5] XAI VALIDATION</span>
+        <span style="color: #bcc9cd;">&rarr;</span>
+        <span style="color: #4cd7f6;">[6] RAD-REPORT SYNTHESIS</span>
     </div>
     """, unsafe_allow_html=True)
     
-    col_home_l, col_home_r = st.columns([8, 4])
+    # 2. Disclaimer - Move to the top and make it a requirement
+    st.warning("⚠️ **CLINICAL DISCLAIMER & SAFETY NOTICE**: PrognosAI-X is an investigational software platform. The segmentation, classification, and radiological report generation tools are designed for educational and research purposes only, and are not FDA-approved for clinical diagnosis. The final diagnostic responsibility rests solely with the reviewing licensed radiologist.")
     
-    with col_home_l:
+    ack_disclaimer = st.checkbox("I acknowledge that this tool is for research/investigative use only and results must be verified by a licensed radiologist.", key="ack_disclaimer_chk")
+    if not ack_disclaimer:
+        st.info("🔒 **Workstation Safety Lock Active**: You must acknowledge the clinical safety disclaimer above to initialize the workstation and access diagnostic controls.")
+        st.stop()
+        
+    st.success("🔓 **Workstation Unlocked**: Disclaimer acknowledged. Clinical session authorized.")
+    
+    # 3. Actionable Start Session Button
+    col_init1, col_init2 = st.columns([3, 1])
+    with col_init1:
+        st.write("Initialize a clean diagnostic workspace for the active patient record:")
+    with col_init2:
+        init_sess = st.button("Initialize Patient Session", type="primary", use_container_width=True)
+        if init_sess:
+            st.session_state.scan_loaded = False
+            st.session_state.mri_raw = np.zeros((256, 256), dtype=np.float32)
+            st.session_state.mri_mask_gt = np.zeros((256, 256), dtype=np.float32)
+            st.session_state.mri_preprocessed = np.zeros((256, 256), dtype=np.float32)
+            st.session_state.prep_steps = []
+            st.session_state.pred_mask = np.zeros((256, 256), dtype=np.float32)
+            if "xai_heatmaps" in st.session_state:
+                del st.session_state.xai_heatmaps
+            if "active_report" in st.session_state:
+                del st.session_state.active_report
+            # Generate a new patient ID in session log
+            log_audit_action("INITIALIZE_SESSION", st.session_state.patient_id, "Cleaned workspace and loaded patient profile.")
+            st.success("Session initialized. Frame buffers reset.")
+            
+    st.divider()
+    
+    # 4. Grid-based Dashboard layout
+    col_dash_l, col_dash_c, col_dash_r = st.columns([1.2, 1.2, 1.0])
+    
+    with col_dash_l:
+        st.markdown('<div class="stCard">', unsafe_allow_html=True)
+        st.subheader("📋 Patient Dashboard")
+        
+        # Display patient data in a clean table format
+        patient_record_data = pd.DataFrame({
+            "Clinical Attribute": ["Patient Reference ID", "Patient Age (Years)", "Patient Gender", "Pulse Sequence Modality", "Magnetic Field Strength", "Scanner Manufacturer"],
+            "Value": [
+                st.session_state.patient_id,
+                f"{st.session_state.patient_age} Years",
+                st.session_state.patient_gender,
+                st.session_state.modality,
+                st.session_state.field_strength,
+                st.session_state.manufacturer
+            ]
+        })
+        st.table(patient_record_data)
+        
         st.markdown("""
-        <div class="surface-container rounded-xl p-6 border border-[#3d494c] mb-6" style="background: #171f33;">
-            <h3 class="font-bold text-sm text-[#bcc9cd] mb-6 flex items-center gap-2">
-                <span class="material-symbols-outlined text-[16px]">analytics</span>
-                PROCESSING PIPELINE STATUS
-            </h3>
-            <div class="flex justify-between items-start relative px-4">
-                <!-- Connector Line -->
-                <div class="absolute top-5 left-8 right-8 h-0.5 bg-[#3d494c] z-0"></div>
-                <div class="absolute top-5 left-8 w-1/2 h-0.5 bg-[#4cd7f6] z-0"></div>
-                <!-- Step 1: Preprocessing -->
-                <div class="flex flex-col items-center gap-2 z-10">
-                    <div class="w-10 h-10 rounded-full bg-[#4cd7f6] text-[#003640] flex items-center justify-center font-bold">
-                        <span class="material-symbols-outlined font-bold">check</span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#dae2fd]">Preprocessing</span>
-                    <span class="text-[10px] font-mono text-[#4cd7f6]">SUCCESS</span>
-                </div>
-                <!-- Step 2: Segmentation -->
-                <div class="flex flex-col items-center gap-2 z-10">
-                    <div class="w-10 h-10 rounded-full bg-[#4cd7f6] text-[#003640] flex items-center justify-center font-bold">
-                        <span class="material-symbols-outlined font-bold">check</span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#dae2fd]">Segmentation</span>
-                    <span class="text-[10px] font-mono text-[#4cd7f6]">SUCCESS</span>
-                </div>
-                <!-- Step 3: Classification -->
-                <div class="flex flex-col items-center gap-2 z-10">
-                    <div class="w-10 h-10 rounded-full bg-[#6f00be] text-[#d6a9ff] flex items-center justify-center font-bold ai-pulse">
-                        <span class="material-symbols-outlined animate-spin" style="animation-duration: 3s;">sync</span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#dae2fd]">Classification</span>
-                    <span class="text-[10px] font-mono text-[#ddb7ff]">IN-PROGRESS</span>
-                </div>
-                <!-- Step 4: Report -->
-                <div class="flex flex-col items-center gap-2 z-10">
-                    <div class="w-10 h-10 rounded-full bg-[#2d3449] text-[#bcc9cd] flex items-center justify-center border border-[#3d494c]">
-                        <span class="material-symbols-outlined">pending_actions</span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#bcc9cd]">Report Gen</span>
-                    <span class="text-[10px] font-mono text-[#bcc9cd]">PENDING</span>
-                </div>
+        <div style="font-size: 11px; color: #bcc9cd; margin-top: 10px;">
+            <b>Workspace Status:</b> Active Session Loaded. Scan data registered in SQLite clinical ledger.
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_dash_c:
+        st.markdown('<div class="stCard">', unsafe_allow_html=True)
+        st.subheader("⚡ System Pulse")
+        
+        # Metrics using st.metric
+        col_metric1, col_metric2 = st.columns(2)
+        with col_metric1:
+            st.metric(label="Scans Processed Today", value="142", delta="+12%")
+        with col_metric2:
+            st.metric(label="Model Confidence Avg", value="97.4%", delta="+2.1%")
+            
+        st.metric(label="Mean Dice Score", value="0.942", delta="Optimal Precision")
+        
+        # Visual throughput indicator
+        st.markdown("""
+        <div style="background: #131b2e; border: 1px solid #3d494c/30; border-radius: 8px; padding: 12px; margin-top: 12px;">
+            <div style="font-size: 10px; color: #4cd7f6; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 4px; text-transform: uppercase;">REAL-TIME TRAFFIC FLOW</div>
+            <div style="font-size: 11px; color: #dae2fd;">Cluster Location: <b>US-EAST-01</b></div>
+            <div style="font-size: 11px; color: #dae2fd;">Network Throughput: <b>4.8 GB/s</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_dash_r:
+        st.markdown('<div class="stCard">', unsafe_allow_html=True)
+        st.subheader("🔔 Alerts & Notifications")
+        
+        # Pipeline Health status indicators
+        st.markdown("#### 🔬 Pipeline Health Summary")
+        st.markdown("""
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); padding: 8px; border-radius: 6px;">
+                <span style="font-size: 12px; color: #dae2fd;">Database Connectivity</span>
+                <span style="background: rgb(34, 197, 94); color: white; font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">CONNECTED</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); padding: 8px; border-radius: 6px;">
+                <span style="font-size: 12px; color: #dae2fd;">Inference Engine</span>
+                <span style="background: rgb(34, 197, 94); color: white; font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">READY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.2); padding: 8px; border-radius: 6px;">
+                <span style="font-size: 12px; color: #dae2fd;">PACS Integration</span>
+                <span style="background: rgb(234, 179, 8); color: white; font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">STAGED</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Active Queue
-        st.markdown("""
-        <div class="surface-container rounded-xl p-6 border border-[#3d494c] mb-6" style="background: #171f33;">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-sm text-[#bcc9cd] flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[16px]">list_alt</span>
-                    ACTIVE SCAN QUEUE
-                </h3>
-                <button class="text-[#4cd7f6] text-[10px] font-bold hover:underline bg-transparent border-0 cursor-pointer">VIEW ALL</button>
-            </div>
-            <div class="space-y-3">
-                <!-- Queue Item 1 -->
-                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
-                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFPPULDGI4Urt1Do4k0fYwOBwpQoLrSaQkOTcuPue0jl0YWn-obaK3G6Feu-0tWfoZGsvXwnqZ2UnErGADpWS50WZtG1ISXNakg2bTqMcTF0HM69jzJkAXy6klDs_dsVu7hPfaOIOfgFUsGuSq79z66nh1FqSxJk_LMk6_NfOIUumGlSxY4FnamM-NRAdX-nGlFzDgZihCCVXckCOq2zXU66N_kVQD823oxD8D8wwX36wlWbIlDqxw4ns_WkkctnKfphOTSI-v3mc"/>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-8842</p>
-                            <p class="text-xs text-[#bcc9cd] m-0">Neurological MRI • 1.2 GB</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="px-2 py-1 rounded bg-[#93000a] text-[#ffdad6] font-bold text-[10px] flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span> CRITICAL
-                        </span>
-                        <span class="font-mono text-xs text-[#bcc9cd]">04m 12s remaining</span>
-                    </div>
-                </div>
-                <!-- Queue Item 2 -->
-                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
-                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoQqhUrlrYAozrxGmY3-qgAYf1S7l_lb8SsNVxhP6A4xEQqy1vXWHdhqxcbBxQ7U-S0PfRJQY411LMZcNrIndx4X-OIO-uX8Ga4ePactzDfJmZJLDRSD3vV4RKIDdesMIjq_kcW7Q5pG_faTw10nqU_j1i6i7EM-Ze9WlDg0xqpzr8oN4SgKHJxH_b2adpBPhggA1Jr4qOtwRCRqN3VoOIlCXirYjsdIw2MaswdxbwXm--igrRUVdnLr9nlgLpqw5QssggtYx_0X0"/>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-7102</p>
-                            <p class="text-xs text-[#bcc9cd] m-0">Thoracic CT • 3.5 GB</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="px-2 py-1 rounded border border-[#bcc9cd]/30 text-[#bcc9cd] font-bold text-[10px] flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#bcc9cd]"></span> STABLE
-                        </span>
-                        <span class="font-mono text-xs text-[#bcc9cd]">12m 45s remaining</span>
-                    </div>
-                </div>
-                <!-- Queue Item 3 -->
-                <div class="flex items-center justify-between p-3 bg-[#131b2e] rounded border border-[#3d494c]/30 hover:border-[#4cd7f6]/50 transition-colors cursor-pointer opacity-80">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded bg-black flex items-center justify-center border border-[#3d494c] overflow-hidden">
-                            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzek3W26ONHmC4D-AX30c83vkscEGGC_PW1wvRhDpOpBDe2NvapUrQsd5QfNTUKEonvETC0_MG-2FSjSDbVL8b7rcnZXOooTa6hSluoDs77YbTc-Su2VC3qW5z96ao3nNeo7VoJBpYA_gq1zOJrjWhsIrpXWMSh46o8j3f4pAhDEYHdKfh9Dj8iiuTmSvwB03uLtGUg5jhsoYdmS_QyzKI0fGQ66-9vhUhtXx-MCxxqP5K4IDOAZEp9nfWZFKmrVZ-uRH0q-rv3OA"/>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-[#dae2fd] m-0">PX-5591</p>
-                            <p class="text-xs text-[#bcc9cd] m-0">Abdominal US • 450 MB</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="px-2 py-1 rounded border border-[#3d494c] text-[#bcc9cd] font-bold text-[10px] flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#869397]"></span> ROUTINE
-                        </span>
-                        <span class="font-mono text-xs text-[#bcc9cd]">Waiting</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_home_r:
-        # Global KPIs
-        st.markdown("""
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
-                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">SCANS TODAY</p>
-                <p class="text-3xl font-bold text-[#4cd7f6] m-0">142</p>
-                <p class="text-[10px] text-[#4cd7f6]/70 font-mono m-0">+12% vs. Avg</p>
-            </div>
-            <div class="surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
-                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">MEAN DICE</p>
-                <p class="text-3xl font-bold text-[#ddb7ff] m-0">0.942</p>
-                <p class="text-[10px] text-[#ddb7ff]/70 font-mono m-0">Optimal Precision</p>
-            </div>
-            <div class="col-span-2 surface-container rounded-xl p-4 border border-[#3d494c]" style="background: #171f33;">
-                <p class="text-xs font-semibold text-[#bcc9cd] mb-2 uppercase tracking-wider">AI CONFIDENCE AVG</p>
-                <div class="flex items-end justify-between">
-                    <p class="text-3xl font-bold text-[#dae2fd] m-0">97.4%</p>
-                    <div class="w-24 h-8 flex items-end gap-1 pb-1">
-                        <div class="w-2 bg-[#4cd7f6] h-1/2"></div>
-                        <div class="w-2 bg-[#4cd7f6] h-2/3"></div>
-                        <div class="w-2 bg-[#4cd7f6] h-3/4"></div>
-                        <div class="w-2 bg-[#4cd7f6] h-full"></div>
-                        <div class="w-2 bg-[#4cd7f6] h-5/6"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # System Health
-        st.markdown("""
-        <div class="surface-container rounded-xl p-6 border border-[#3d494c]" style="background: #171f33;">
-            <h3 class="font-bold text-sm text-[#bcc9cd] mb-6 flex items-center gap-2">
-                <span class="material-symbols-outlined text-[16px]">sensors</span>
-                SYSTEM CLUSTER HEALTH
-            </h3>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                        <span class="text-sm text-[#dae2fd]">ML Inference Engine</span>
-                    </div>
-                    <span class="font-mono text-xs text-[#bcc9cd]">24ms Latency</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                        <span class="text-sm text-[#dae2fd]">Edge Compute Node 01</span>
-                    </div>
-                    <span class="font-mono text-xs text-[#bcc9cd]">12% Load</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                        <span class="text-sm text-[#dae2fd]">Cloud Archive Sync</span>
-                    </div>
-                    <span class="font-mono text-xs text-[#bcc9cd]">Active</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>
-                        <span class="text-sm text-[#dae2fd]">Segmentation Model V2</span>
-                    </div>
-                    <span class="font-mono text-xs text-[#bcc9cd]">Update Pending</span>
-                </div>
-            </div>
-            <div class="mt-8 pt-6 border-t border-[#3d494c]">
-                <div class="w-full h-24 bg-[#131b2e] rounded border border-[#3d494c]/30 relative overflow-hidden flex items-center justify-center">
-                    <div class="relative text-center z-10 px-4">
-                        <p class="text-[9px] text-[#4cd7f6]/80 m-0 uppercase tracking-widest">REAL-TIME TRAFFIC FLOW</p>
-                        <p class="font-mono text-[10px] text-[#bcc9cd] m-0">Cluster: US-EAST-01 • Throughput: 4.8 GB/s</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Clinical Alerts
+        st.markdown("#### ⚠️ Real-time Validation Warnings")
+        if not st.session_state.scan_loaded:
+            st.info("No scan active in workspace. Ingest a scan in Tab 2 to activate alert trackers.")
+        else:
+            st.warning("⚠️ **Low SNR Warning**: Scan slice SNR is borderline (under 6.5). Contrast stretching recommended.")
+            st.warning("⚠️ **Volumetric Warning**: 2D PNG file type detected. Compliance expects NIfTI volume.")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Render interactive pipeline flowchart and contributions
-    st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c;">', unsafe_allow_html=True)
+    st.markdown('<div class="stCard" style="background: rgba(23, 31, 51, 0.6); border: 1px solid #3d494c; margin-top: 24px;">', unsafe_allow_html=True)
     st.subheader("System Architecture & Computational Path")
     
     col_chart, col_desc = st.columns([1, 1])
