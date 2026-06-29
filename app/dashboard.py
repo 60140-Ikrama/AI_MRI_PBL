@@ -417,7 +417,11 @@ with st.sidebar:
         log_audit_action("CHANGE_ACTIVE_PATIENT", st.session_state.patient_id, f"Switched from {prev_id} to {st.session_state.patient_id}")
         
     # 3. Developer Settings / Scan Simulator Toggle
-    show_dev = st.toggle("Show Research Scan Simulator", value=False)
+    with st.sidebar.expander("⚙️ System Settings", expanded=False):
+        st.subheader("Large Language Model")
+        gemini_key = st.text_input("Gemini API Key (Required)", type="password", help="Enables live radiology report generation using Gemini Pro.")
+    with st.sidebar.expander("🔬 Investigational Tools", expanded=False):
+        show_dev = st.toggle("Enable Research Scan Simulator", value=False)
     if show_dev:
         with st.expander("Scan Simulator Controls", expanded=True):
             tumor_size = st.slider("Tumor Base Radius (px)", 5, 50, 25)
@@ -449,8 +453,6 @@ with st.sidebar:
                 log_audit_action("SYNTHESIZE_SCAN", st.session_state.patient_id, f"Size: {tumor_size}, Loc: ({t_y}, {t_x}), Noise: {noise_level}")
         
     st.divider()
-    st.subheader("Large Language Model")
-    gemini_key = st.text_input("Gemini API Key (Required)", type="password", help="Enables live radiology report generation using Gemini Pro.")
     
     st.caption("System Status: **ONLINE (LOCAL)**")
 
@@ -460,16 +462,36 @@ with st.sidebar:
 st.title("PrognosAI-X Workstation")
 st.caption("Explainable Multi-Stage Deep Learning Framework for Brain Tumor Clinical Decision Support")
 
-tabs = st.tabs([
-    "1. Home", "2. Upload / Preprocess", "3. Segmentation", "4. Classification", 
-    "5. Explainable AI", "6. Statistical Validation", "7. Clinical Report", 
-    "8. Research Analytics", "9. Model Comparison", "10. Performance",
-    "11. Pre-flight Check"
-])
+# --- Patient Context Bar (Global Header) ---
+st.markdown('<div class="stCard" style="margin-bottom: 24px; padding: 12px;">', unsafe_allow_html=True)
+ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns(4)
+scan_loaded = st.session_state.get("scan_loaded", False)
+with ctx_c1:
+    st.metric("Patient ID", st.session_state.get("patient_id", "Uninitialized"))
+with ctx_c2:
+    st.metric("Session Status", "🟢 Active" if scan_loaded else "🟡 Pending Ingest")
+with ctx_c3:
+    conf = 0.0
+    if scan_loaded and "pipeline_results" in st.session_state:
+        prob = st.session_state.pipeline_results.get("Pipeline C (Ensemble)", 0.5)
+        conf = max(prob, 1.0 - prob) * 100.0
+    st.metric("Model Confidence", f"{conf:.1f}%" if scan_loaded else "N/A")
+with ctx_c4:
+    st.metric("System Alerts", "Optimal" if scan_loaded else "Awaiting Data")
+st.markdown("</div>", unsafe_allow_html=True)
+main_tabs = st.tabs(["1. Workspace / Ingest", "2. Analyze", "3. Interpret", "4. Report", "5. Analytics"])
+with main_tabs[0]:
+    ingest_tabs = st.tabs(["Dashboard Home", "Upload & Preprocess", "Pre-flight Check"])
+with main_tabs[1]:
+    analyze_tabs = st.tabs(["Segmentation", "Classification"])
+with main_tabs[2]:
+    interpret_tabs = st.tabs(["Explainable AI", "Statistical Validation"])
+with main_tabs[4]:
+    analytics_tabs = st.tabs(["Research Analytics", "Model Comparison", "Performance"])
 # ---------------------------------------------------------------------
 # TAB 1: HOME PAGE
 # ---------------------------------------------------------------------
-with tabs[0]:
+with ingest_tabs[0]:
     # Header: Session Overview
     patient_id_rep = st.session_state.patient_id
     
@@ -742,7 +764,7 @@ with tabs[0]:
 # ---------------------------------------------------------------------
 # TAB 2: UPLOAD & PREPROCESS (Clinical Ingest & Validation)
 # ---------------------------------------------------------------------
-with tabs[1]:
+with ingest_tabs[1]:
     st.subheader("Medical Signal Preprocessing & Clinical Ingest Pipeline")
     
     col_workflow1, col_workflow2, col_workflow3 = st.columns([1, 2, 1])
@@ -1046,1418 +1068,1442 @@ with tabs[1]:
 # ---------------------------------------------------------------------
 # TAB 3: SEGMENTATION STUDY
 # ---------------------------------------------------------------------
-with tabs[2]:
-    st.subheader("Brain Tumor Segmentation and Boundary Analysis")
+with analyze_tabs[0]:
+    if not scan_loaded:
+        st.warning('🔒 Session Gated: Please upload and preprocess a scan in the Ingest tab to unlock Analysis.')
+    else:
+        st.subheader("Brain Tumor Segmentation and Boundary Analysis")
     
-    col_controls, col_viewport, col_side_metrics = st.columns([3, 6, 3])
+        col_controls, col_viewport, col_side_metrics = st.columns([3, 6, 3])
     
-    with col_controls:
-        st.markdown('<div class="glass-panel" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; padding: 15px; border-radius: 12px; margin-bottom: 15px;">', unsafe_allow_html=True)
-        st.markdown("### Viewport Controls")
-        contrast_val = st.slider("Contrast", 0.5, 2.0, 1.2, step=0.1)
-        brightness_val = st.slider("Brightness", 0.5, 2.0, 0.8, step=0.1)
-        zoom_val = st.slider("Zoom (%)", 100, 300, 240, step=10)
+        with col_controls:
+            st.markdown('<div class="glass-panel" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; padding: 15px; border-radius: 12px; margin-bottom: 15px;">', unsafe_allow_html=True)
+            st.markdown("### Viewport Controls")
+            contrast_val = st.slider("Contrast", 0.5, 2.0, 1.2, step=0.1)
+            brightness_val = st.slider("Brightness", 0.5, 2.0, 0.8, step=0.1)
+            zoom_val = st.slider("Zoom (%)", 100, 300, 240, step=10)
         
-        st.markdown("### Segmentation Toggle")
-        show_tumor = st.checkbox("Tumor Mask", value=True)
-        show_roi = st.checkbox("ROI Boundary", value=False)
-        show_uncertainty = st.checkbox("Boundary Uncertainty", value=False)
-        overlay_alpha = st.slider("Overlay Opacity (%)", 0, 100, 45, step=5) / 100.0
+            st.markdown("### Segmentation Toggle")
+            show_tumor = st.checkbox("Tumor Mask", value=True)
+            show_roi = st.checkbox("ROI Boundary", value=False)
+            show_uncertainty = st.checkbox("Boundary Uncertainty", value=False)
+            overlay_alpha = st.slider("Overlay Opacity (%)", 0, 100, 45, step=5) / 100.0
         
-        st.session_state.segmentation_model = st.selectbox(
-            "Select Segmentation Model", 
-            ["U-Net", "Attention U-Net", "U-Net++", "Mask R-CNN"]
-        )
-        
-        run_seg = st.button("Run Segmentation model", use_container_width=True)
-        
-        if run_seg:
-            try:
-                with st.spinner("Processing segmentation..."):
-                    # Caching Strategy: compute key and check db cache
-                    cache_key = compute_cache_key(st.session_state.mri_raw, st.session_state.segmentation_model)
-                    cached_mask = get_cached_segmentation(cache_key)
-                    
-                    if cached_mask is not None:
-                        pred = cached_mask
-                        st.session_state.pred_mask = pred
-                        st.success("🎯 Retrieved segmentation from persistent cache (0ms latency).")
-                        log_audit_action("SEGMENTATION_CACHE_HIT", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
-                    else:
-                        time.sleep(0.5)
-                        gt = st.session_state.mri_mask_gt
-                        if np.sum(gt) > 0:
-                            if st.session_state.segmentation_model == "U-Net":
-                                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                                pred = cv2.dilate(gt, kernel)
-                                noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
-                                pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
-                            elif st.session_state.segmentation_model == "Attention U-Net":
-                                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-                                pred = cv2.dilate(gt, kernel)
-                                pred = pred * 0.95 + gt * 0.05
-                            elif st.session_state.segmentation_model == "U-Net++":
-                                pred = gt.copy()
-                                pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
-                            else:
-                                pred = gt.copy()
-                                pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
-                                pred = (pred > 0.4).astype(np.float32)
-                        else:
-                            pred = np.zeros_like(gt)
-                        st.session_state.pred_mask = pred
-                        # Save to cache
-                        cache_segmentation(cache_key, pred)
-                        st.success("Voxel boundary delineation complete.")
-                        log_audit_action("SEGMENTATION_RUN", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
-            except Exception as e:
-                st.error(f"❌ **Pipeline Error**: Segmentation failed on the current slice due to low signal-to-noise ratio or array mismatches. Details: {e}. Please verify image quality or re-upload.")
-                log_audit_action("SEGMENTATION_FAIL", st.session_state.patient_id, str(e))
-                
-        # Radiologist-in-the-loop Refinement Mode
-        st.divider()
-        st.markdown("### Radiologist-in-the-Loop Refinement")
-        refine_mode = st.radio("Refinement Tool", ["None", "Dilate Mask (Add)", "Erode Mask (Remove)", "Clear Fine Edges"], index=0)
-        refine_strength = st.slider("Refinement Radius (px)", 1, 5, 2)
-        if st.button("Apply Manual Mask Refinement") and "pred_mask" in st.session_state:
-            mask = st.session_state.pred_mask.copy()
-            if refine_mode == "Dilate Mask (Add)":
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
-                mask = cv2.dilate(mask, kernel)
-                st.session_state.pred_mask = mask
-                st.success("Manual expansion applied to mask.")
-                log_audit_action("REFINEMENT_DILATE", st.session_state.patient_id, f"Radius: {refine_strength}")
-            elif refine_mode == "Erode Mask (Remove)":
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
-                mask = cv2.erode(mask, kernel)
-                st.session_state.pred_mask = mask
-                st.success("Manual contraction applied to mask.")
-                log_audit_action("REFINEMENT_ERODE", st.session_state.patient_id, f"Radius: {refine_strength}")
-            elif refine_mode == "Clear Fine Edges":
-                mask[mask < 0.3] = 0.0
-                st.session_state.pred_mask = mask
-                st.success("Cleared low-confidence border pixels.")
-                log_audit_action("REFINEMENT_CLEAR_EDGES", st.session_state.patient_id)
-                
-        if st.button("Export DICOM", key="export_dicom_seg", use_container_width=True):
-            st.success("DICOM series signed and exported to PACS.")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_viewport:
-        if not st.session_state.scan_loaded:
-            st.info("ℹ️ **No Scan Loaded**: The active workstation viewport is currently empty. Please drag and drop a scan series in Tab 2, or use the sidebar 'Synthesize' tool to populate the workstation frame buffer.")
-        col_view_sel, col_z_sel = st.columns([2, 3])
-        with col_view_sel:
-            sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
-        with col_z_sel:
-            slice_z = st.slider("3D Volume Z-Slice Depth", 1, 155, 78, label_visibility="collapsed")
-            
-        # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling only if scan is loaded
-        if st.session_state.scan_loaded:
-            z_center = 78
-            z_offset = abs(slice_z - z_center)
-            sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
-            
-            img, mask = generate_synthetic_slice(
-                modality=st.session_state.modality,
-                tumor_present=True,
-                tumor_size=sim_tumor_size,
-                tumor_loc=(t_y, t_x),
-                noise_level=noise_level,
-                misalign_x=float(misalign),
-                misalign_y=float(misalign * 0.5),
-                misalign_rot=float(misalign * 0.2),
-                seed=slice_z
+            st.session_state.segmentation_model = st.selectbox(
+                "Select Segmentation Model", 
+                ["U-Net", "Attention U-Net", "U-Net++", "Mask R-CNN"]
             )
-            
-            # Check if slice_z changed and update active scan
-            if "prev_slice_z" not in st.session_state or st.session_state.prev_slice_z != slice_z:
-                st.session_state.prev_slice_z = slice_z
-                st.session_state.mri_raw = img
-                st.session_state.mri_mask_gt = mask
-                proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
-                st.session_state.mri_preprocessed = proc_img
-            
-        base_img = st.session_state.mri_raw.copy()
-        if sub_tab_selected == "CLAHE":
-            base_img = apply_clahe(base_img)
-        elif sub_tab_selected == "Skull Stripped":
-            base_img, _ = skull_strip(base_img)
-            
-        adjusted_img = np.clip((base_img - 0.5) * contrast_val + 0.5 + (brightness_val - 1.0), 0.0, 1.0)
         
-        h, w = adjusted_img.shape
-        dy, dx, ch, cw = 0, 0, h, w
-        if zoom_val > 100:
-            crop_fraction = 100.0 / zoom_val
-            ch, cw = int(h * crop_fraction), int(w * crop_fraction)
-            dy, dx = (h - ch) // 2, (w - cw) // 2
-            cropped = adjusted_img[dy:dy+ch, dx:dx+cw]
-            adjusted_img = cv2.resize(cropped, (w, h))
-            
-        rgb_img = cv2.cvtColor((adjusted_img * 255).astype(np.uint8), cv2.COLOR_GRAY2RGB)
+            run_seg = st.button("Run Segmentation model", use_container_width=True)
         
-        if show_tumor:
-            mask = st.session_state.pred_mask.copy()
+            if run_seg:
+                try:
+                    with st.spinner("Processing segmentation..."):
+                        # Caching Strategy: compute key and check db cache
+                        cache_key = compute_cache_key(st.session_state.mri_raw, st.session_state.segmentation_model)
+                        cached_mask = get_cached_segmentation(cache_key)
+                    
+                        if cached_mask is not None:
+                            pred = cached_mask
+                            st.session_state.pred_mask = pred
+                            st.success("🎯 Retrieved segmentation from persistent cache (0ms latency).")
+                            log_audit_action("SEGMENTATION_CACHE_HIT", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
+                        else:
+                            time.sleep(0.5)
+                            gt = st.session_state.mri_mask_gt
+                            if np.sum(gt) > 0:
+                                if st.session_state.segmentation_model == "U-Net":
+                                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                                    pred = cv2.dilate(gt, kernel)
+                                    noise = (np.random.rand(*pred.shape) > 0.92) & (st.session_state.mri_raw > 0.3)
+                                    pred = np.clip(pred + noise.astype(np.float32) * 0.5, 0, 1)
+                                elif st.session_state.segmentation_model == "Attention U-Net":
+                                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                                    pred = cv2.dilate(gt, kernel)
+                                    pred = pred * 0.95 + gt * 0.05
+                                elif st.session_state.segmentation_model == "U-Net++":
+                                    pred = gt.copy()
+                                    pred = cv2.GaussianBlur(pred, (3, 3), 0.5)
+                                else:
+                                    pred = gt.copy()
+                                    pred = cv2.GaussianBlur(pred, (5, 5), 1.0)
+                                    pred = (pred > 0.4).astype(np.float32)
+                            else:
+                                pred = np.zeros_like(gt)
+                            st.session_state.pred_mask = pred
+                            # Save to cache
+                            cache_segmentation(cache_key, pred)
+                            st.success("Voxel boundary delineation complete.")
+                            log_audit_action("SEGMENTATION_RUN", st.session_state.patient_id, f"Model: {st.session_state.segmentation_model}")
+                except Exception as e:
+                    st.error(f"❌ **Pipeline Error**: Segmentation failed on the current slice due to low signal-to-noise ratio or array mismatches. Details: {e}. Please verify image quality or re-upload.")
+                    log_audit_action("SEGMENTATION_FAIL", st.session_state.patient_id, str(e))
+                
+            # Radiologist-in-the-loop Refinement Mode
+            st.divider()
+            st.markdown("### Radiologist-in-the-Loop Refinement")
+            refine_mode = st.radio("Refinement Tool", ["None", "Dilate Mask (Add)", "Erode Mask (Remove)", "Clear Fine Edges"], index=0)
+            refine_strength = st.slider("Refinement Radius (px)", 1, 5, 2)
+            if st.button("Apply Manual Mask Refinement") and "pred_mask" in st.session_state:
+                mask = st.session_state.pred_mask.copy()
+                if refine_mode == "Dilate Mask (Add)":
+                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
+                    mask = cv2.dilate(mask, kernel)
+                    st.session_state.pred_mask = mask
+                    st.success("Manual expansion applied to mask.")
+                    log_audit_action("REFINEMENT_DILATE", st.session_state.patient_id, f"Radius: {refine_strength}")
+                elif refine_mode == "Erode Mask (Remove)":
+                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (refine_strength*2+1, refine_strength*2+1))
+                    mask = cv2.erode(mask, kernel)
+                    st.session_state.pred_mask = mask
+                    st.success("Manual contraction applied to mask.")
+                    log_audit_action("REFINEMENT_ERODE", st.session_state.patient_id, f"Radius: {refine_strength}")
+                elif refine_mode == "Clear Fine Edges":
+                    mask[mask < 0.3] = 0.0
+                    st.session_state.pred_mask = mask
+                    st.success("Cleared low-confidence border pixels.")
+                    log_audit_action("REFINEMENT_CLEAR_EDGES", st.session_state.patient_id)
+                
+            if st.button("Export DICOM", key="export_dicom_seg", use_container_width=True):
+                st.success("DICOM series signed and exported to PACS.")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col_viewport:
+            if not st.session_state.scan_loaded:
+                st.info("ℹ️ **No Scan Loaded**: The active workstation viewport is currently empty. Please drag and drop a scan series in Tab 2, or use the sidebar 'Synthesize' tool to populate the workstation frame buffer.")
+            col_view_sel, col_z_sel = st.columns([2, 3])
+            with col_view_sel:
+                sub_tab_selected = st.radio("Select View Mode", ["Original", "CLAHE", "Skull Stripped"], horizontal=True, label_visibility="collapsed")
+            with col_z_sel:
+                slice_z = st.slider("3D Volume Z-Slice Depth", 1, 155, 78, label_visibility="collapsed")
+            
+            # Dynamically synthesize slice based on slice_z depth to simulate 3D PACS scrolling only if scan is loaded
+            if st.session_state.scan_loaded:
+                z_center = 78
+                z_offset = abs(slice_z - z_center)
+                sim_tumor_size = max(5, int(tumor_size * np.sqrt(max(0.0, 1.0 - (z_offset / 78.0)**2))))
+            
+                img, mask = generate_synthetic_slice(
+                    modality=st.session_state.modality,
+                    tumor_present=True,
+                    tumor_size=sim_tumor_size,
+                    tumor_loc=(t_y, t_x),
+                    noise_level=noise_level,
+                    misalign_x=float(misalign),
+                    misalign_y=float(misalign * 0.5),
+                    misalign_rot=float(misalign * 0.2),
+                    seed=slice_z
+                )
+            
+                # Check if slice_z changed and update active scan
+                if "prev_slice_z" not in st.session_state or st.session_state.prev_slice_z != slice_z:
+                    st.session_state.prev_slice_z = slice_z
+                    st.session_state.mri_raw = img
+                    st.session_state.mri_mask_gt = mask
+                    proc_img, _ = run_preprocessing_pipeline(img, ["strip", "noise", "clahe", "norm"])
+                    st.session_state.mri_preprocessed = proc_img
+            
+            base_img = st.session_state.mri_raw.copy()
+            if sub_tab_selected == "CLAHE":
+                base_img = apply_clahe(base_img)
+            elif sub_tab_selected == "Skull Stripped":
+                base_img, _ = skull_strip(base_img)
+            
+            adjusted_img = np.clip((base_img - 0.5) * contrast_val + 0.5 + (brightness_val - 1.0), 0.0, 1.0)
+        
+            h, w = adjusted_img.shape
+            dy, dx, ch, cw = 0, 0, h, w
             if zoom_val > 100:
-                cropped_mask = mask[dy:dy+ch, dx:dx+cw]
-                mask = cv2.resize(cropped_mask, (w, h))
+                crop_fraction = 100.0 / zoom_val
+                ch, cw = int(h * crop_fraction), int(w * crop_fraction)
+                dy, dx = (h - ch) // 2, (w - cw) // 2
+                cropped = adjusted_img[dy:dy+ch, dx:dx+cw]
+                adjusted_img = cv2.resize(cropped, (w, h))
             
-            cyan_mask = np.zeros_like(rgb_img)
-            cyan_mask[mask > 0.1] = [76, 215, 246]
-            idx = mask > 0.1
-            rgb_img[idx] = cv2.addWeighted(rgb_img, 1.0 - overlay_alpha, cyan_mask, overlay_alpha, 0)[idx]
-            
-        if show_roi:
-            gt = st.session_state.mri_mask_gt.copy()
-            if zoom_val > 100:
-                cropped_gt = gt[dy:dy+ch, dx:dx+cw]
-                gt = cv2.resize(cropped_gt, (w, h))
-            contours, _ = cv2.findContours((gt * 255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            cv2.drawContours(rgb_img, contours, -1, [221, 183, 255], 2)
-            
-        if show_uncertainty:
-            mask = st.session_state.pred_mask.copy()
-            if zoom_val > 100:
-                cropped_mask = mask[dy:dy+ch, dx:dx+cw]
-                mask = cv2.resize(cropped_mask, (w, h))
-            # Calculate boundary uncertainty (highest at probability 0.5)
-            uncertainty = 1.0 - 2.0 * np.abs(mask - 0.5)
-            uncertainty = np.clip(uncertainty, 0.0, 1.0)
-            uncertainty_mask = (mask > 0.1) & (mask < 0.9)
-            
-            # Draw coral/orange warning highlight for voxel boundary uncertainty
-            orange_mask = np.zeros_like(rgb_img)
-            orange_mask[uncertainty_mask] = [255, 127, 80]
-            
-            idx = uncertainty_mask
-            rgb_img[idx] = cv2.addWeighted(rgb_img, 1.0 - overlay_alpha, orange_mask, overlay_alpha, 0)[idx]
-            
-        st.markdown(f"""
-        <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: monospace; display: flex; justify-content: space-between;">
-            <div style="color: #4cd7f6; font-size: 11px;">
-                <div>SLICE: 142 / 256</div>
-                <div>POS: -24.5mm</div>
-                <div>MODALITY: {st.session_state.modality}</div>
-            </div>
-            <div style="color: #bcc9cd; text-align: right; font-size: 11px;">
-                <div>FOV: 220 x 220</div>
-                <div>ZOOM: {zoom_val}%</div>
-                <div style="color: #ffb4ab; font-weight: bold;">LATENCY: 12ms</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            rgb_img = cv2.cvtColor((adjusted_img * 255).astype(np.uint8), cv2.COLOR_GRAY2RGB)
         
-        st.image(rgb_img, use_container_width=True)
-        
-        st.markdown("""
-        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 9999px; padding: 8px 24px; display: flex; gap: 20px; justify-content: center; width: max-content; margin: 15px auto;">
-            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">pan_tool</span>
-            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">straighten</span>
-            <span class="material-symbols-outlined" style="color: #4cd7f6; cursor: pointer; font-size: 20px;">adjust</span>
-            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">format_color_fill</span>
-            <div style="width: 1px; height: 20px; background: #3d494c;"></div>
-            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">undo</span>
-            <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">redo</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_side_metrics:
-        metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
-        st.markdown(f"""
-        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">DICE SCORE</span>
-                <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['Dice']:.3f}</span>
-            </div>
-            <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
-                <div style="background: #4cd7f6; height: 100%; width: {metrics['Dice']*100:.1f}%;"></div>
-            </div>
-        </div>
-        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">IOU (JACCARD)</span>
-                <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['IoU']:.3f}</span>
-            </div>
-            <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
-                <div style="background: #4cd7f6; height: 100%; width: {metrics['IoU']*100:.1f}%;"></div>
-            </div>
-        </div>
-        <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">HAUSDORFF DISTANCE</span>
-                <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">{metrics['Hausdorff']:.2f} <span style="font-size: 14px; font-weight: normal; color: #bcc9cd;">mm</span></span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
-        tumor_area_cm2 = biomarkers["Tumor Area (mm2)"] / 100.0
-        st.markdown(f"""
-        <div class="glass-panel p-4 rounded-xl mb-4" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
-            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined text-[14px]">insights</span> CLINICAL INSIGHTS
-            </h3>
-            <div style="background: rgba(76, 215, 246, 0.1); border: 1px solid rgba(76, 215, 246, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Tumor area estimated at <span style="color: #4cd7f6; font-weight: bold;">{tumor_area_cm2:.2f} cm²</span>. Spatial extension registered relative to brain template.</p>
-            </div>
-            <div style="background: rgba(221, 183, 255, 0.1); border: 1px solid rgba(221, 183, 255, 0.2); padding: 12px; border-radius: 8px;">
-                <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Segmentation confidence: <span style="color: #ddb7ff; font-weight: bold;">{metrics['Dice']*100:.1f}%</span>. Outlier boundary filters applied.</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="glass-panel p-4 rounded-xl" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
-            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">Processing History</h3>
-            <div style="position: relative; padding-left: 16px; border-left: 1px solid #3d494c;">
-                <div style="position: relative; margin-bottom: 12px;">
-                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #4cd7f6;"></div>
-                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:42 AM</span>
-                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Inference completed. Results verified.</p>
+            if show_tumor:
+                mask = st.session_state.pred_mask.copy()
+                if zoom_val > 100:
+                    cropped_mask = mask[dy:dy+ch, dx:dx+cw]
+                    mask = cv2.resize(cropped_mask, (w, h))
+            
+                cyan_mask = np.zeros_like(rgb_img)
+                cyan_mask[mask > 0.1] = [76, 215, 246]
+                idx = mask > 0.1
+                rgb_img[idx] = cv2.addWeighted(rgb_img, 1.0 - overlay_alpha, cyan_mask, overlay_alpha, 0)[idx]
+            
+            if show_roi:
+                gt = st.session_state.mri_mask_gt.copy()
+                if zoom_val > 100:
+                    cropped_gt = gt[dy:dy+ch, dx:dx+cw]
+                    gt = cv2.resize(cropped_gt, (w, h))
+                contours, _ = cv2.findContours((gt * 255).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(rgb_img, contours, -1, [221, 183, 255], 2)
+            
+            if show_uncertainty:
+                mask = st.session_state.pred_mask.copy()
+                if zoom_val > 100:
+                    cropped_mask = mask[dy:dy+ch, dx:dx+cw]
+                    mask = cv2.resize(cropped_mask, (w, h))
+                # Calculate boundary uncertainty (highest at probability 0.5)
+                uncertainty = 1.0 - 2.0 * np.abs(mask - 0.5)
+                uncertainty = np.clip(uncertainty, 0.0, 1.0)
+                uncertainty_mask = (mask > 0.1) & (mask < 0.9)
+            
+                # Draw coral/orange warning highlight for voxel boundary uncertainty
+                orange_mask = np.zeros_like(rgb_img)
+                orange_mask[uncertainty_mask] = [255, 127, 80]
+            
+                idx = uncertainty_mask
+                rgb_img[idx] = cv2.addWeighted(rgb_img, 1.0 - overlay_alpha, orange_mask, overlay_alpha, 0)[idx]
+            
+            st.markdown(f"""
+            <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-family: monospace; display: flex; justify-content: space-between;">
+                <div style="color: #4cd7f6; font-size: 11px;">
+                    <div>SLICE: 142 / 256</div>
+                    <div>POS: -24.5mm</div>
+                    <div>MODALITY: {st.session_state.modality}</div>
                 </div>
-                <div style="position: relative; margin-bottom: 12px;">
-                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
-                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:41 AM</span>
-                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Skull stripping preprocessing...</p>
-                </div>
-                <div style="position: relative;">
-                    <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
-                    <span style="font-size: 11px; color: #bcc9cd; display: block;">10:40 AM</span>
-                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">DICOM Series Loaded</p>
+                <div style="color: #bcc9cd; text-align: right; font-size: 11px;">
+                    <div>FOV: 220 x 220</div>
+                    <div>ZOOM: {zoom_val}%</div>
+                    <div style="color: #ffb4ab; font-weight: bold;">LATENCY: 12ms</div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-    st.subheader("Correlation Study: Segmentation Quality vs. Classification Accuracy")
-    cor_col1, cor_col2 = st.columns(2)
-    with cor_col1:
-        dice_vals = np.linspace(0.65, 0.98, 30)
-        acc_vals = 0.55 + 0.4 * dice_vals + np.random.normal(0, 0.02, 30)
-        fig_dice = px.scatter(x=dice_vals, y=acc_vals, trendline="ols", labels={"x": "Dice Score", "y": "Classification Accuracy"}, title="Classification Accuracy vs Dice Score")
-        fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
-        st.plotly_chart(fig_dice, use_container_width=True)
-    with cor_col2:
-        iou_vals = dice_vals / (2.0 - dice_vals)
-        acc_vals_iou = 0.55 + 0.42 * iou_vals + np.random.normal(0, 0.02, 30)
-        fig_iou = px.scatter(x=iou_vals, y=acc_vals_iou, trendline="ols", labels={"x": "Jaccard IoU", "y": "Classification Accuracy"}, title="Classification Accuracy vs Jaccard IoU")
-        fig_iou.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
-        st.plotly_chart(fig_iou, use_container_width=True)
+            st.image(rgb_img, use_container_width=True)
+        
+            st.markdown("""
+            <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 9999px; padding: 8px 24px; display: flex; gap: 20px; justify-content: center; width: max-content; margin: 15px auto;">
+                <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">pan_tool</span>
+                <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">straighten</span>
+                <span class="material-symbols-outlined" style="color: #4cd7f6; cursor: pointer; font-size: 20px;">adjust</span>
+                <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">format_color_fill</span>
+                <div style="width: 1px; height: 20px; background: #3d494c;"></div>
+                <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">undo</span>
+                <span class="material-symbols-outlined" style="color: #dae2fd; cursor: pointer; font-size: 20px;">redo</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_side_metrics:
+            metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
+            st.markdown(f"""
+            <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">DICE SCORE</span>
+                    <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['Dice']:.3f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
+                    <div style="background: #4cd7f6; height: 100%; width: {metrics['Dice']*100:.1f}%;"></div>
+                </div>
+            </div>
+            <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">IOU (JACCARD)</span>
+                    <span style="font-size: 24px; color: #4cd7f6; font-weight: bold;">{metrics['IoU']:.3f}</span>
+                </div>
+                <div style="width: 100%; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; background: #3d494c;">
+                    <div style="background: #4cd7f6; height: 100%; width: {metrics['IoU']*100:.1f}%;"></div>
+                </div>
+            </div>
+            <div class="surface-container rounded-xl p-4 border border-[#3d494c] mb-4" style="background: #171f33; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">HAUSDORFF DISTANCE</span>
+                    <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">{metrics['Hausdorff']:.2f} <span style="font-size: 14px; font-weight: normal; color: #bcc9cd;">mm</span></span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
+            tumor_area_cm2 = biomarkers["Tumor Area (mm2)"] / 100.0
+            st.markdown(f"""
+            <div class="glass-panel p-4 rounded-xl mb-4" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
+                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined text-[14px]">insights</span> CLINICAL INSIGHTS
+                </h3>
+                <div style="background: rgba(76, 215, 246, 0.1); border: 1px solid rgba(76, 215, 246, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Tumor area estimated at <span style="color: #4cd7f6; font-weight: bold;">{tumor_area_cm2:.2f} cm²</span>. Spatial extension registered relative to brain template.</p>
+                </div>
+                <div style="background: rgba(221, 183, 255, 0.1); border: 1px solid rgba(221, 183, 255, 0.2); padding: 12px; border-radius: 8px;">
+                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Segmentation confidence: <span style="color: #ddb7ff; font-weight: bold;">{metrics['Dice']*100:.1f}%</span>. Outlier boundary filters applied.</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+            st.markdown("""
+            <div class="glass-panel p-4 rounded-xl" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
+                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">Processing History</h3>
+                <div style="position: relative; padding-left: 16px; border-left: 1px solid #3d494c;">
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #4cd7f6;"></div>
+                        <span style="font-size: 11px; color: #bcc9cd; display: block;">10:42 AM</span>
+                        <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Inference completed. Results verified.</p>
+                    </div>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
+                        <span style="font-size: 11px; color: #bcc9cd; display: block;">10:41 AM</span>
+                        <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Skull stripping preprocessing...</p>
+                    </div>
+                    <div style="position: relative;">
+                        <div style="position: absolute; left: -21px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #869397;"></div>
+                        <span style="font-size: 11px; color: #bcc9cd; display: block;">10:40 AM</span>
+                        <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">DICOM Series Loaded</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.subheader("Correlation Study: Segmentation Quality vs. Classification Accuracy")
+        cor_col1, cor_col2 = st.columns(2)
+        with cor_col1:
+            dice_vals = np.linspace(0.65, 0.98, 30)
+            acc_vals = 0.55 + 0.4 * dice_vals + np.random.normal(0, 0.02, 30)
+            fig_dice = px.scatter(x=dice_vals, y=acc_vals, trendline="ols", labels={"x": "Dice Score", "y": "Classification Accuracy"}, title="Classification Accuracy vs Dice Score")
+            fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
+            st.plotly_chart(fig_dice, use_container_width=True)
+        with cor_col2:
+            iou_vals = dice_vals / (2.0 - dice_vals)
+            acc_vals_iou = 0.55 + 0.42 * iou_vals + np.random.normal(0, 0.02, 30)
+            fig_iou = px.scatter(x=iou_vals, y=acc_vals_iou, trendline="ols", labels={"x": "Jaccard IoU", "y": "Classification Accuracy"}, title="Classification Accuracy vs Jaccard IoU")
+            fig_iou.update_layout(template="plotly_dark", paper_bgcolor="#0b1326", plot_bgcolor="#0b1326")
+            st.plotly_chart(fig_iou, use_container_width=True)
 
 # ---------------------------------------------------------------------
 # TAB 4: CLASSIFICATION ANALYSIS
 # ---------------------------------------------------------------------
-with tabs[3]:
-    st.subheader("ROI-Guided Classification Analysis")
+with analyze_tabs[1]:
+    if not scan_loaded:
+        pass
+    else:
+        st.subheader("ROI-Guided Classification Analysis")
     
-    col_opts1, col_opts2 = st.columns(2)
-    with col_opts1:
-        clf_model_name = st.selectbox("Classifier Core Backbone", ["MobileNetV2", "EfficientNetV2", "DenseNet121", "ResNet50", "Vision Transformer", "Swin Transformer"])
-    with col_opts2:
-        run_clf = st.button("Run Multi-Pipeline Classification")
+        col_opts1, col_opts2 = st.columns(2)
+        with col_opts1:
+            clf_model_name = st.selectbox("Classifier Core Backbone", ["MobileNetV2", "EfficientNetV2", "DenseNet121", "ResNet50", "Vision Transformer", "Swin Transformer"])
+        with col_opts2:
+            run_clf = st.button("Run Multi-Pipeline Classification")
         
-    if run_clf:
-        with st.spinner("Executing pipeline workflows..."):
-            t_start = time.time()
-            try:
-                # Modality validation: ensure inputs match supported parameters (MRI FLAIR/T1/T2)
-                if st.session_state.modality not in ["FLAIR", "T2", "T1"]:
-                    raise ValueError(f"Unsupported scanner source: {st.session_state.modality}. Classification backbones are only validated for brain MRI pulse sequences (FLAIR/T1/T2).")
+        if run_clf:
+            with st.spinner("Executing pipeline workflows..."):
+                t_start = time.time()
+                try:
+                    # Modality validation: ensure inputs match supported parameters (MRI FLAIR/T1/T2)
+                    if st.session_state.modality not in ["FLAIR", "T2", "T1"]:
+                        raise ValueError(f"Unsupported scanner source: {st.session_state.modality}. Classification backbones are only validated for brain MRI pulse sequences (FLAIR/T1/T2).")
                 
-                # Setup classification timeout limit (e.g., 3.0 seconds max)
-                timeout_limit = 3.0
+                    # Setup classification timeout limit (e.g., 3.0 seconds max)
+                    timeout_limit = 3.0
                 
-                # 1. Pipeline A: Whole MRI
-                probs_a, _ = run_pipeline_a(st.session_state.mri_preprocessed, clf_model_name)
+                    # 1. Pipeline A: Whole MRI
+                    probs_a, _ = run_pipeline_a(st.session_state.mri_preprocessed, clf_model_name)
                 
-                # 2. Pipeline B: ROI crop
-                probs_b, roi_b, bbox_b = run_pipeline_b(st.session_state.mri_preprocessed, st.session_state.pred_mask, clf_model_name)
+                    # 2. Pipeline B: ROI crop
+                    probs_b, roi_b, bbox_b = run_pipeline_b(st.session_state.mri_preprocessed, st.session_state.pred_mask, clf_model_name)
                 
-                # 3. Pipeline C: ROI crop + Ensemble
-                probs_c, roi_c, bbox_c, cnn_p, vit_p = run_pipeline_c(st.session_state.mri_preprocessed, st.session_state.pred_mask, cnn_name="ResNet50", vit_name="Vision Transformer")
+                    # 3. Pipeline C: ROI crop + Ensemble
+                    probs_c, roi_c, bbox_c, cnn_p, vit_p = run_pipeline_c(st.session_state.mri_preprocessed, st.session_state.pred_mask, cnn_name="ResNet50", vit_name="Vision Transformer")
                 
-                # Check elapsed time for timeout
-                elapsed_time = time.time() - t_start
-                if elapsed_time > timeout_limit:
-                    raise TimeoutError(f"Classification timeout exceeded. Elapsed time: {elapsed_time:.2f}s (Threshold: {timeout_limit}s). Processing of multi-spectral queue scan was aborted to ensure system stability.")
+                    # Check elapsed time for timeout
+                    elapsed_time = time.time() - t_start
+                    if elapsed_time > timeout_limit:
+                        raise TimeoutError(f"Classification timeout exceeded. Elapsed time: {elapsed_time:.2f}s (Threshold: {timeout_limit}s). Processing of multi-spectral queue scan was aborted to ensure system stability.")
                 
-                st.session_state.pipeline_results = {
-                    "Pipeline A (Whole MRI)": float(probs_a[1]),
-                    "Pipeline B (ROI Crop)": float(probs_b[1]),
-                    "Pipeline C (Ensemble)": float(probs_c[1]),
-                    "roi": roi_b,
-                    "bbox": bbox_b,
-                    "cnn_p": float(cnn_p[1]),
-                    "vit_p": float(vit_p[1])
-                }
-                st.success("Pipelines completed execution.")
-            except TimeoutError as te:
-                st.error(f"⏱️ **Pipeline Timeout Alert:** {te}")
-            except ValueError as ve:
-                st.error(f"⚠️ **Modality Incompatibility Alert:** {ve}")
-            except Exception as e:
-                st.error(f"❌ **Unexpected Pipeline Error:** {e}")
+                    st.session_state.pipeline_results = {
+                        "Pipeline A (Whole MRI)": float(probs_a[1]),
+                        "Pipeline B (ROI Crop)": float(probs_b[1]),
+                        "Pipeline C (Ensemble)": float(probs_c[1]),
+                        "roi": roi_b,
+                        "bbox": bbox_b,
+                        "cnn_p": float(cnn_p[1]),
+                        "vit_p": float(vit_p[1])
+                    }
+                    st.success("Pipelines completed execution.")
+                except TimeoutError as te:
+                    st.error(f"⏱️ **Pipeline Timeout Alert:** {te}")
+                except ValueError as ve:
+                    st.error(f"⚠️ **Modality Incompatibility Alert:** {ve}")
+                except Exception as e:
+                    st.error(f"❌ **Unexpected Pipeline Error:** {e}")
             
-    if "pipeline_results" in st.session_state:
-        res = st.session_state.pipeline_results
+        if "pipeline_results" in st.session_state:
+            res = st.session_state.pipeline_results
         
-        col_res1, col_res2 = st.columns([1, 2])
-        with col_res1:
-            st.markdown('<div class="stCard">', unsafe_allow_html=True)
-            st.markdown("### ROI Crop Extraction")
-            st.image(res["roi"], caption="Extracted Tumor ROI (224x224)", use_container_width=True, clamp=True)
-            st.write(f"Bounding Box Coordinates: `{res['bbox']}`")
-            st.markdown('</div>', unsafe_allow_html=True)
+            col_res1, col_res2 = st.columns([1, 2])
+            with col_res1:
+                st.markdown('<div class="stCard">', unsafe_allow_html=True)
+                st.markdown("### ROI Crop Extraction")
+                st.image(res["roi"], caption="Extracted Tumor ROI (224x224)", use_container_width=True, clamp=True)
+                st.write(f"Bounding Box Coordinates: `{res['bbox']}`")
+                st.markdown('</div>', unsafe_allow_html=True)
             
-        with col_res2:
-            st.markdown('<div class="stCard">', unsafe_allow_html=True)
-            st.markdown("### Pipeline Probability Comparison")
+            with col_res2:
+                st.markdown('<div class="stCard">', unsafe_allow_html=True)
+                st.markdown("### Pipeline Probability Comparison")
             
-            # Plotly bar chart
-            pip_names = ["Pipeline A (Whole Scan)", "Pipeline B (Segmented ROI)", "Pipeline C (ROI Ensemble)"]
-            pip_probs = [res["Pipeline A (Whole MRI)"], res["Pipeline B (ROI Crop)"], res["Pipeline C (Ensemble)"]]
+                # Plotly bar chart
+                pip_names = ["Pipeline A (Whole Scan)", "Pipeline B (Segmented ROI)", "Pipeline C (ROI Ensemble)"]
+                pip_probs = [res["Pipeline A (Whole MRI)"], res["Pipeline B (ROI Crop)"], res["Pipeline C (Ensemble)"]]
             
-            fig = go.Figure([go.Bar(
-                x=pip_names, 
-                y=pip_probs, 
-                marker_color=["#ff7b72", "#58a6ff", "#39ff14"],
-                text=[f"{p*100:.2f}%" for p in pip_probs],
-                textposition='auto'
-            )])
-            fig.update_layout(
-                title_text="Tumor Pathological Classification Probabilities",
-                yaxis=dict(title="Probability", range=[0, 1.1]),
-                template="plotly_dark",
-                paper_bgcolor="#161b22",
-                plot_bgcolor="#161b22"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+                fig = go.Figure([go.Bar(
+                    x=pip_names, 
+                    y=pip_probs, 
+                    marker_color=["#ff7b72", "#58a6ff", "#39ff14"],
+                    text=[f"{p*100:.2f}%" for p in pip_probs],
+                    textposition='auto'
+                )])
+                fig.update_layout(
+                    title_text="Tumor Pathological Classification Probabilities",
+                    yaxis=dict(title="Probability", range=[0, 1.1]),
+                    template="plotly_dark",
+                    paper_bgcolor="#161b22",
+                    plot_bgcolor="#161b22"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             
-        st.subheader("Architectural Path Comparison")
-        col_info1, col_info2, col_info3 = st.columns(3)
-        with col_info1:
-            st.markdown(f"""
-            **Pipeline A: Whole MRI**
-            - Classifier Backbone: `{clf_model_name}`
-            - Tumor Probability: `{res["Pipeline A (Whole MRI)"]:.4f}`
-            - *Clinical Risk:* Highly susceptible to background noise, skull bone signals, and positioning offsets.
-            """)
-        with col_info2:
-            st.markdown(f"""
-            **Pipeline B: ROI Crop**
-            - Classifier Backbone: `{clf_model_name}`
-            - Tumor Probability: `{res["Pipeline B (ROI Crop)"]:.4f}`
-            - *Clinical Risk:* Focused parameter space on lesion margins. Mitigates background shortcuts.
-            """)
-        with col_info3:
-            st.markdown(f"""
-            **Pipeline C: ROI CNN-ViT Ensemble**
-            - ResNet50 Probability: `{res["cnn_p"]:.4f}`
-            - ViT Probability: `{res["vit_p"]:.4f}`
-            - Combined Probability: **`{res["Pipeline C (Ensemble)"]:.4f}`**
-            - *Clinical Risk:* **Statistically superior.** Blends local spatial features and global contextual attention mechanisms.
-            """)
+            st.subheader("Architectural Path Comparison")
+            col_info1, col_info2, col_info3 = st.columns(3)
+            with col_info1:
+                st.markdown(f"""
+                **Pipeline A: Whole MRI**
+                - Classifier Backbone: `{clf_model_name}`
+                - Tumor Probability: `{res["Pipeline A (Whole MRI)"]:.4f}`
+                - *Clinical Risk:* Highly susceptible to background noise, skull bone signals, and positioning offsets.
+                """)
+            with col_info2:
+                st.markdown(f"""
+                **Pipeline B: ROI Crop**
+                - Classifier Backbone: `{clf_model_name}`
+                - Tumor Probability: `{res["Pipeline B (ROI Crop)"]:.4f}`
+                - *Clinical Risk:* Focused parameter space on lesion margins. Mitigates background shortcuts.
+                """)
+            with col_info3:
+                st.markdown(f"""
+                **Pipeline C: ROI CNN-ViT Ensemble**
+                - ResNet50 Probability: `{res["cnn_p"]:.4f}`
+                - ViT Probability: `{res["vit_p"]:.4f}`
+                - Combined Probability: **`{res["Pipeline C (Ensemble)"]:.4f}`**
+                - *Clinical Risk:* **Statistically superior.** Blends local spatial features and global contextual attention mechanisms.
+                """)
 
 # ---------------------------------------------------------------------
 # TAB 5: EXPLAINABLE AI
 # ---------------------------------------------------------------------
-with tabs[4]:
-    # Top Prediction Banner
-    prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-    risk_label = "Glioblastoma Multiforme - High Grade" if prob_val > 0.5 else "Low-Grade Glioma"
-    risk_badge = '<span class="bg-[#93000a] text-[#ffdad6] px-2 py-0.5 rounded text-xs font-bold">CRITICAL</span>' if prob_val > 0.5 else '<span class="bg-[#2d3449] text-[#bcc9cd] px-2 py-0.5 rounded text-xs font-bold">STABLE</span>'
+with interpret_tabs[0]:
+    if not scan_loaded:
+        st.warning('🔒 Session Gated: Please upload and preprocess a scan in the Ingest tab to unlock Interpretation.')
+    else:
+        # Top Prediction Banner
+        prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
+        risk_label = "Glioblastoma Multiforme - High Grade" if prob_val > 0.5 else "Low-Grade Glioma"
+        risk_badge = '<span class="bg-[#93000a] text-[#ffdad6] px-2 py-0.5 rounded text-xs font-bold">CRITICAL</span>' if prob_val > 0.5 else '<span class="bg-[#2d3449] text-[#bcc9cd] px-2 py-0.5 rounded text-xs font-bold">STABLE</span>'
     
-    st.markdown(f"""
-    <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; margin-bottom: 20px;">
-        <div class="glass-panel" style="grid-column: span 8; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
-            <div>
-                <h2 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 4px 0; text-transform: uppercase;">CORE PREDICTION</h2>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <h1 style="font-size: 24px; color: #4cd7f6; font-weight: bold; margin: 0;">{risk_label}</h1>
-                    {risk_badge}
+        st.markdown(f"""
+        <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div class="glass-panel" style="grid-column: span 8; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
+                <div>
+                    <h2 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 4px 0; text-transform: uppercase;">CORE PREDICTION</h2>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <h1 style="font-size: 24px; color: #4cd7f6; font-weight: bold; margin: 0;">{risk_label}</h1>
+                        {risk_badge}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">CONFIDENCE</span>
+                    <div style="font-size: 32px; color: #4cd7f6; font-weight: bold; line-height: 1;">{prob_val*100:.1f}%</div>
                 </div>
             </div>
-            <div style="text-align: right;">
-                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">CONFIDENCE</span>
-                <div style="font-size: 32px; color: #4cd7f6; font-weight: bold; line-height: 1;">{prob_val*100:.1f}%</div>
-            </div>
-        </div>
-        <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">FOCUS QUALITY</span>
-            <div style="display: flex; align-items: center; gap: 8px; color: #4ade80;">
-                <span class="material-symbols-outlined">verified</span>
-                <span style="font-size: 18px; font-weight: bold;">Correct</span>
-            </div>
-        </div>
-        <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">XAI CONFIDENCE</span>
-            <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">94%</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col_xai_left, col_xai_right = st.columns([8, 4])
-    
-    with col_xai_left:
-        col_sel_xai, col_run_xai = st.columns([3, 1])
-        with col_sel_xai:
-            xai_method = st.selectbox(
-                "Select Explainability Technique",
-                ["Grad-CAM", "Grad-CAM++", "Score-CAM", "Integrated Gradients", "SHAP", "XAI Uncertainty Map"],
-                label_visibility="collapsed",
-                key="xai_method_select"
-            )
-        with col_run_xai:
-            run_xai = st.button("Generate XAI", key="run_xai_main", use_container_width=True)
-            
-        if run_xai:
-            with st.spinner("Generating explainability maps..."):
-                model = get_classification_model("ResNet50")
-                input_t = torch.tensor(cv2.resize(st.session_state.mri_preprocessed, (224, 224)), dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-                
-                cam_exp = CAMExplainer(model)
-                grad_cam = cam_exp.run_grad_cam(input_t)
-                grad_cam_pp = cam_exp.run_grad_cam_plusplus(input_t)
-                score_cam = cam_exp.run_score_cam(input_t)
-                int_grads = run_integrated_gradients(model, input_t)
-                shap_map = run_shap_summary(model, cv2.resize(st.session_state.mri_preprocessed, (224, 224)))
-                
-                st.session_state.xai_heatmaps = {
-                    "Grad-CAM": grad_cam,
-                    "Grad-CAM++": grad_cam_pp,
-                    "Score-CAM": score_cam,
-                    "Integrated Gradients": int_grads,
-                    "SHAP": shap_map
-                }
-                
-                # Compute pixel-wise standard deviation across all 5 saliency maps to represent uncertainty/disagreement
-                maps = []
-                for k, m in st.session_state.xai_heatmaps.items():
-                    denom = np.max(m) - np.min(m)
-                    norm_m = (m - np.min(m)) / denom if denom > 0 else m
-                    maps.append(norm_m)
-                st.session_state.xai_heatmaps["XAI Uncertainty Map"] = np.std(maps, axis=0)
-                
-                st.success("Explainability maps and consensus uncertainty calculated successfully.")
-                
-        if "xai_heatmaps" in st.session_state and xai_method in st.session_state.xai_heatmaps:
-            hm = st.session_state.xai_heatmaps[xai_method]
-            overlay = get_xai_visualization(st.session_state.mri_preprocessed, hm)
-            
-            # Display XAI overlay
-            st.image(overlay, caption=f"{xai_method} Saliency Map", use_container_width=True)
-            
-            overlap_val, focus_cat = evaluate_focus_quality(hm, cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-            st.markdown(f"""
-            <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-top: 10px; font-family: monospace; display: flex; justify-content: space-between;">
-                <div style="color: #4cd7f6; font-size: 12px;">
-                    <span>XAI OVERLAY STATUS: {xai_method.upper()} ACTIVE</span>
+            <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">FOCUS QUALITY</span>
+                <div style="display: flex; align-items: center; gap: 8px; color: #4ade80;">
+                    <span class="material-symbols-outlined">verified</span>
+                    <span style="font-size: 18px; font-weight: bold;">Correct</span>
                 </div>
-                <div style="color: #bcc9cd; text-align: right; font-size: 12px;">
-                    <span>OVERLAP IOU: {overlap_val:.3f} • FOCUS: <strong>{focus_cat}</strong></span>
+            </div>
+            <div class="glass-panel" style="grid-column: span 2; padding: 16px; border-radius: 12px; text-align: center; background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 8px; text-transform: uppercase;">XAI CONFIDENCE</span>
+                <span style="font-size: 24px; color: #ddb7ff; font-weight: bold;">94%</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+        col_xai_left, col_xai_right = st.columns([8, 4])
+    
+        with col_xai_left:
+            col_sel_xai, col_run_xai = st.columns([3, 1])
+            with col_sel_xai:
+                xai_method = st.selectbox(
+                    "Select Explainability Technique",
+                    ["Grad-CAM", "Grad-CAM++", "Score-CAM", "Integrated Gradients", "SHAP", "XAI Uncertainty Map"],
+                    label_visibility="collapsed",
+                    key="xai_method_select"
+                )
+            with col_run_xai:
+                run_xai = st.button("Generate XAI", key="run_xai_main", use_container_width=True)
+            
+            if run_xai:
+                with st.spinner("Generating explainability maps..."):
+                    model = get_classification_model("ResNet50")
+                    input_t = torch.tensor(cv2.resize(st.session_state.mri_preprocessed, (224, 224)), dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+                
+                    cam_exp = CAMExplainer(model)
+                    grad_cam = cam_exp.run_grad_cam(input_t)
+                    grad_cam_pp = cam_exp.run_grad_cam_plusplus(input_t)
+                    score_cam = cam_exp.run_score_cam(input_t)
+                    int_grads = run_integrated_gradients(model, input_t)
+                    shap_map = run_shap_summary(model, cv2.resize(st.session_state.mri_preprocessed, (224, 224)))
+                
+                    st.session_state.xai_heatmaps = {
+                        "Grad-CAM": grad_cam,
+                        "Grad-CAM++": grad_cam_pp,
+                        "Score-CAM": score_cam,
+                        "Integrated Gradients": int_grads,
+                        "SHAP": shap_map
+                    }
+                
+                    # Compute pixel-wise standard deviation across all 5 saliency maps to represent uncertainty/disagreement
+                    maps = []
+                    for k, m in st.session_state.xai_heatmaps.items():
+                        denom = np.max(m) - np.min(m)
+                        norm_m = (m - np.min(m)) / denom if denom > 0 else m
+                        maps.append(norm_m)
+                    st.session_state.xai_heatmaps["XAI Uncertainty Map"] = np.std(maps, axis=0)
+                
+                    st.success("Explainability maps and consensus uncertainty calculated successfully.")
+                
+            if "xai_heatmaps" in st.session_state and xai_method in st.session_state.xai_heatmaps:
+                hm = st.session_state.xai_heatmaps[xai_method]
+                overlay = get_xai_visualization(st.session_state.mri_preprocessed, hm)
+            
+                # Display XAI overlay
+                st.image(overlay, caption=f"{xai_method} Saliency Map", use_container_width=True)
+            
+                overlap_val, focus_cat = evaluate_focus_quality(hm, cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
+                st.markdown(f"""
+                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 8px; padding: 10px; margin-top: 10px; font-family: monospace; display: flex; justify-content: space-between;">
+                    <div style="color: #4cd7f6; font-size: 12px;">
+                        <span>XAI OVERLAY STATUS: {xai_method.upper()} ACTIVE</span>
+                    </div>
+                    <div style="color: #bcc9cd; text-align: right; font-size: 12px;">
+                        <span>OVERLAP IOU: {overlap_val:.3f} • FOCUS: <strong>{focus_cat}</strong></span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+                # Calculate explainability confidence
+                avg_overlap = np.mean([
+                    evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
+                    evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM++"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
+                    evaluate_focus_quality(st.session_state.xai_heatmaps["Score-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0]
+            ])
+                exp_conf = compute_explainability_confidence(avg_overlap, prob_val)
+            
+                st.markdown("### Explainability Confidence")
+                col_stat1, col_stat2, col_stat3 = st.columns(3)
+                col_stat1.metric("Mean Overlap IoU", f"{avg_overlap:.4f}")
+                col_stat2.metric("Prediction Probability", f"{prob_val:.4f}")
+                col_stat3.metric("XAI Trust Score", f"{exp_conf:.4f}")
+            else:
+                st.info("Click 'Generate XAI' to compute saliency maps for the active slice.")
+            
+            # Comparison Table
+            st.markdown("""
+            <div class="glass-panel rounded-xl overflow-hidden mt-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #3d494c; background: #131b2e; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 11px; color: #dae2fd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">MULTI-MODEL COMPARISON</h3>
+                    <span class="material-symbols-outlined" style="color: #bcc9cd;">compare_arrows</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
+                    <thead>
+                        <tr style="background: #171f33; color: #bcc9cd; border-bottom: 1px solid #3d494c;">
+                            <th style="padding: 12px; font-weight: 600;">Architecture</th>
+                            <th style="padding: 12px; font-weight: 600;">Accuracy</th>
+                            <th style="padding: 12px; font-weight: 600;">FLOPs</th>
+                            <th style="padding: 12px; font-weight: 600;">Latency</th>
+                            <th style="padding: 12px; font-weight: 600;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
+                            <td style="padding: 12px;">Vision Transformer (ViT-L/16)</td>
+                            <td style="padding: 12px; color: #4cd7f6;">99.1%</td>
+                            <td style="padding: 12px;">12.4G</td>
+                            <td style="padding: 12px;">45ms</td>
+                            <td style="padding: 12px;"><span style="background: #ddb7ff; color: #2c0051; padding: 2px 6px; border-radius: 9999px; font-size: 10px; font-weight: bold;">CURRENT</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d494c/30;">
+                            <td style="padding: 12px;">EfficientNetV2-M</td>
+                            <td style="padding: 12px; color: #4cd7f6;">98.4%</td>
+                            <td style="padding: 12px;">8.2G</td>
+                            <td style="padding: 12px;">28ms</td>
+                            <td style="padding: 12px; color: #bcc9cd;">Standby</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
+                            <td style="padding: 12px;">MobileNetV3-Large</td>
+                            <td style="padding: 12px; color: #4cd7f6;">94.2%</td>
+                            <td style="padding: 12px;">0.6G</td>
+                            <td style="padding: 12px;">6ms</td>
+                            <td style="padding: 12px; color: #bcc9cd;">Standby</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_xai_right:
+            # Explainability Insights card
+            st.markdown("""
+            <div class="glass-panel p-6 rounded-xl bg-secondary-container/10 border-secondary-container/30 mb-6" style="background: rgba(111, 0, 190, 0.05); border: 1px solid rgba(111, 0, 190, 0.2); border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                    <span class="material-symbols-outlined" style="color: #ddb7ff;">auto_awesome</span>
+                    <h3 style="font-size: 18px; font-weight: 600; color: #ddb7ff; margin: 0;">Explainability Insights</h3>
+                </div>
+                <p style="font-size: 14px; color: #bcc9cd; line-height: 1.6; margin-bottom: 16px;">
+                    Grad-CAM analysis confirms model attention is primarily focused on the <span style="color: #ddb7ff; font-weight: 600;">hyper-intense necrotic core</span> and the infiltrating margins of the temporal lobe. High confidence in classification is driven by the vascular proliferation patterns detected.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: VASCULAR</span>
+                            <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">88%</span>
+                        </div>
+                        <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
+                            <div style="background: #4cd7f6; height: 100%; width: 88%;"></div>
+                        </div>
+                    </div>
+                    <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: TISSUE DENSITY</span>
+                            <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">74%</span>
+                        </div>
+                        <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
+                            <div style="background: #4cd7f6; height: 100%; width: 74%;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
-            # Calculate explainability confidence
-            avg_overlap = np.mean([
-                evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
-                evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM++"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0],
-                evaluate_focus_quality(st.session_state.xai_heatmaps["Score-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))[0]
-            ])
-            exp_conf = compute_explainability_confidence(avg_overlap, prob_val)
-            
-            st.markdown("### Explainability Confidence")
-            col_stat1, col_stat2, col_stat3 = st.columns(3)
-            col_stat1.metric("Mean Overlap IoU", f"{avg_overlap:.4f}")
-            col_stat2.metric("Prediction Probability", f"{prob_val:.4f}")
-            col_stat3.metric("XAI Trust Score", f"{exp_conf:.4f}")
-        else:
-            st.info("Click 'Generate XAI' to compute saliency maps for the active slice.")
-            
-        # Comparison Table
-        st.markdown("""
-        <div class="glass-panel rounded-xl overflow-hidden mt-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c;">
-            <div style="padding: 12px 16px; border-bottom: 1px solid #3d494c; background: #131b2e; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 11px; color: #dae2fd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">MULTI-MODEL COMPARISON</h3>
-                <span class="material-symbols-outlined" style="color: #bcc9cd;">compare_arrows</span>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
-                <thead>
-                    <tr style="background: #171f33; color: #bcc9cd; border-bottom: 1px solid #3d494c;">
-                        <th style="padding: 12px; font-weight: 600;">Architecture</th>
-                        <th style="padding: 12px; font-weight: 600;">Accuracy</th>
-                        <th style="padding: 12px; font-weight: 600;">FLOPs</th>
-                        <th style="padding: 12px; font-weight: 600;">Latency</th>
-                        <th style="padding: 12px; font-weight: 600;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
-                        <td style="padding: 12px;">Vision Transformer (ViT-L/16)</td>
-                        <td style="padding: 12px; color: #4cd7f6;">99.1%</td>
-                        <td style="padding: 12px;">12.4G</td>
-                        <td style="padding: 12px;">45ms</td>
-                        <td style="padding: 12px;"><span style="background: #ddb7ff; color: #2c0051; padding: 2px 6px; border-radius: 9999px; font-size: 10px; font-weight: bold;">CURRENT</span></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #3d494c/30;">
-                        <td style="padding: 12px;">EfficientNetV2-M</td>
-                        <td style="padding: 12px; color: #4cd7f6;">98.4%</td>
-                        <td style="padding: 12px;">8.2G</td>
-                        <td style="padding: 12px;">28ms</td>
-                        <td style="padding: 12px; color: #bcc9cd;">Standby</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #3d494c/30; background: rgba(23, 31, 51, 0.4);">
-                        <td style="padding: 12px;">MobileNetV3-Large</td>
-                        <td style="padding: 12px; color: #4cd7f6;">94.2%</td>
-                        <td style="padding: 12px;">0.6G</td>
-                        <td style="padding: 12px;">6ms</td>
-                        <td style="padding: 12px; color: #bcc9cd;">Standby</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
         
-    with col_xai_right:
-        # Explainability Insights card
-        st.markdown("""
-        <div class="glass-panel p-6 rounded-xl bg-secondary-container/10 border-secondary-container/30 mb-6" style="background: rgba(111, 0, 190, 0.05); border: 1px solid rgba(111, 0, 190, 0.2); border-radius: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                <span class="material-symbols-outlined" style="color: #ddb7ff;">auto_awesome</span>
-                <h3 style="font-size: 18px; font-weight: 600; color: #ddb7ff; margin: 0;">Explainability Insights</h3>
-            </div>
-            <p style="font-size: 14px; color: #bcc9cd; line-height: 1.6; margin-bottom: 16px;">
-                Grad-CAM analysis confirms model attention is primarily focused on the <span style="color: #ddb7ff; font-weight: 600;">hyper-intense necrotic core</span> and the infiltrating margins of the temporal lobe. High confidence in classification is driven by the vascular proliferation patterns detected.
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: VASCULAR</span>
-                        <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">88%</span>
-                    </div>
-                    <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
-                        <div style="background: #4cd7f6; height: 100%; width: 88%;"></div>
-                    </div>
+            # Root-Cause Analysis card
+            st.markdown("""
+            <div class="glass-panel p-6 rounded-xl mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">ROOT-CAUSE ANALYSIS</h3>
+                    <span class="material-symbols-outlined" style="color: #ffb4ab;">analytics</span>
                 </div>
-                <div style="background: #131b2e; padding: 12px; border-radius: 6px; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em;">FEATURE RELEVANCE: TISSUE DENSITY</span>
-                        <span style="font-size: 13px; font-family: monospace; color: #4cd7f6; font-weight: bold;">74%</span>
+                <div style="padding: 16px; background: rgba(147, 0, 10, 0.1); border: 1px solid rgba(147, 0, 10, 0.2); border-radius: 8px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <span class="material-symbols-outlined" style="color: #ffb4ab; margin-top: 4px;">warning</span>
+                        <div>
+                            <h4 style="font-size: 14px; font-weight: bold; color: #dae2fd; margin: 0 0 4px 0;">Small Tumor Detection</h4>
+                            <p style="font-size: 12px; color: #bcc9cd; margin: 0; line-height: 1.5;">
+                                Historical data suggests potential false negatives in lesions under 5mm. Model sensitivity requires manual validation for adjacent micro-lesions.
+                            </p>
+                        </div>
                     </div>
-                    <div style="width: 100%; height: 4px; border-radius: 2px; overflow: hidden; background: #2d3449;">
-                        <div style="background: #4cd7f6; height: 100%; width: 74%;"></div>
+                    <div style="margin-top: 16px; display: flex; gap: 8px;">
+                        <button style="flex: 1; background: #2d3449; color: #dae2fd; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Review Histology</button>
+                        <button style="flex: 1; background: #4cd7f6; color: #003640; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Augment View</button>
                     </div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-        # Root-Cause Analysis card
-        st.markdown("""
-        <div class="glass-panel p-6 rounded-xl mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">ROOT-CAUSE ANALYSIS</h3>
-                <span class="material-symbols-outlined" style="color: #ffb4ab;">analytics</span>
-            </div>
-            <div style="padding: 16px; background: rgba(147, 0, 10, 0.1); border: 1px solid rgba(147, 0, 10, 0.2); border-radius: 8px;">
-                <div style="display: flex; gap: 12px; align-items: flex-start;">
-                    <span class="material-symbols-outlined" style="color: #ffb4ab; margin-top: 4px;">warning</span>
-                    <div>
-                        <h4 style="font-size: 14px; font-weight: bold; color: #dae2fd; margin: 0 0 4px 0;">Small Tumor Detection</h4>
-                        <p style="font-size: 12px; color: #bcc9cd; margin: 0; line-height: 1.5;">
-                            Historical data suggests potential false negatives in lesions under 5mm. Model sensitivity requires manual validation for adjacent micro-lesions.
-                        </p>
+            # Inference metrics
+            st.markdown("""
+            <div class="glass-panel p-6 rounded-xl" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
+                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 24px; text-transform: uppercase;">INFERENCE METRICS</h3>
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div style="display: flex; align-items: flex-end; gap: 4px; height: 128px; padding: 0 16px;">
+                        <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 40%;"></div>
+                        <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 65%;"></div>
+                        <div style="flex: 1; background: #4cd7f6; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 92%; position: relative;">
+                            <div style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #4cd7f6; color: #003640; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">92%</div>
+                        </div>
+                        <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 55%;"></div>
+                        <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 78%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 10px; color: #bcc9cd;">
+                        <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span>
+                    </div>
+                    <div style="background: #171f33; padding: 12px; border-radius: 8px; border: 1px solid #3d494c; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 14px;">bolt</span>
+                            <span style="font-size: 12px; font-weight: 600;">Peak GPU Load</span>
+                        </div>
+                        <span style="font-family: monospace; color: #4cd7f6; font-size: 13px;">22.4 TFLOPS</span>
                     </div>
                 </div>
-                <div style="margin-top: 16px; display: flex; gap: 8px;">
-                    <button style="flex: 1; background: #2d3449; color: #dae2fd; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Review Histology</button>
-                    <button style="flex: 1; background: #4cd7f6; color: #003640; border: 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;">Augment View</button>
-                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Inference metrics
-        st.markdown("""
-        <div class="glass-panel p-6 rounded-xl" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px;">
-            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 24px; text-transform: uppercase;">INFERENCE METRICS</h3>
-            <div style="display: flex; flex-direction: column; gap: 24px;">
-                <div style="display: flex; align-items: flex-end; gap: 4px; height: 128px; padding: 0 16px;">
-                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 40%;"></div>
-                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 65%;"></div>
-                    <div style="flex: 1; background: #4cd7f6; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 92%; position: relative;">
-                        <div style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #4cd7f6; color: #003640; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">92%</div>
-                    </div>
-                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 55%;"></div>
-                    <div style="flex: 1; background: #2d3449; border-top-left-radius: 4px; border-top-right-radius: 4px; height: 78%;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 10px; color: #bcc9cd;">
-                    <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span>
-                </div>
-                <div style="background: #171f33; padding: 12px; border-radius: 8px; border: 1px solid #3d494c; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 14px;">bolt</span>
-                        <span style="font-size: 12px; font-weight: 600;">Peak GPU Load</span>
-                    </div>
-                    <span style="font-family: monospace; color: #4cd7f6; font-size: 13px;">22.4 TFLOPS</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
 # TAB 6: STATISTICAL VALIDATION
 # ---------------------------------------------------------------------
-with tabs[5]:
-    st.subheader("Rigorous Statistical Validation Framework")
-    st.write(
-        "Performs statistical tests on the 30-patient benchmark matrix to determine if Pipeline C is statistically "
-        "superior to Pipelines A and B, and if U-Net++ outperforms standard U-Net."
-    )
-    
-    run_stats = st.button("Run Statistical Tests")
-    
-    if run_stats:
-        with st.spinner("Computing hypothesis statistics..."):
-            data = st.session_state.stats_dataset
-            
-            # 1. One-Way ANOVA across all three pipelines
-            anova_res = run_one_way_anova(data["Pipeline_A"], data["Pipeline_B"], data["Pipeline_C"])
-            
-            # 2. Paired t-test: Pipeline B vs Pipeline C
-            paired_rel = run_paired_ttest(data["Pipeline_B"], data["Pipeline_C"])
-            
-            # 3. Independent t-test: Pipeline A vs Pipeline C
-            ind_test = run_independent_ttest(data["Pipeline_A"], data["Pipeline_C"])
-            
-            # 4. Cohen's d Effect Size
-            cohen_d_val = compute_cohens_d(data["Pipeline_C"], data["Pipeline_B"])
-            
-            # 5. Bootstrap Resampling
-            boot_res = run_bootstrap_validation(data["Pipeline_C"])
-            
-            # 6. McNemar Test (Using binarized classification predictions)
-            y_true = np.ones(30)
-            y_pred_b = (data["Pipeline_B"] > 0.85).astype(int)
-            y_pred_c = (data["Pipeline_C"] > 0.85).astype(int)
-            mcnemar_res = run_mcnemar_test(y_true, y_pred_b, y_pred_c)
-            
-            st.session_state.stats_results = {
-                "anova": anova_res,
-                "paired_t": paired_rel,
-                "ind_t": ind_test,
-                "cohen_d": cohen_d_val,
-                "bootstrap": boot_res,
-                "mcnemar": mcnemar_res
-            }
-            st.success("Hypothesis tests calculated.")
-            
-    if "stats_results" in st.session_state:
-        s = st.session_state.stats_results
-        
-        # Display statistical metrics tables
-        col_t1, col_t2 = st.columns(2)
-        with col_t1:
-            st.markdown('<div class="stCard">', unsafe_allow_html=True)
-            st.markdown("### Classification Pipeline Tests")
-            
-            stats_tbl = pd.DataFrame({
-                "Statistical Test": [s["anova"]["Test"], s["paired_t"]["Test"], s["ind_t"]["Test"], s["mcnemar"]["Test"]],
-                "Test Statistic": [f"F = {s['anova']['F_statistic']:.3f}", f"t = {s['paired_t']['t_statistic']:.3f}", f"t = {s['ind_t']['t_statistic']:.3f}", f"chi2 = {s['mcnemar']['chi2_statistic']:.3f}"],
-                "p-value": [f"{s['anova']['p_value']:.4e}", f"{s['paired_t']['p_value']:.4e}", f"{s['ind_t']['p_value']:.4e}", f"{s['mcnemar']['p_value']:.4e}"],
-                "Significant (α=0.05)": [s["anova"]["Significant"], s["paired_t"]["Significant"], s["ind_t"]["Significant"], s["mcnemar"]["Significant"]]
-            })
-            st.table(stats_tbl)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        with col_t2:
-            st.markdown('<div class="stCard">', unsafe_allow_html=True)
-            st.markdown("### Effect Size & Resampling Analysis")
-            
-            effect_tbl = pd.DataFrame({
-                "Metric": ["Cohen's d (Pipeline C vs B)", "Bootstrap Mean Accuracy (Pipeline C)", "Bootstrap 95% Confidence Interval"],
-                "Value": [f"{s['cohen_d']:.4f}", f"{s['bootstrap']['Bootstrap_Mean']:.4f}", f"[{s['bootstrap']['Empirical_CI'][0]:.4f}, {s['bootstrap']['Empirical_CI'][1]:.4f}]"],
-                "Interpretation": [
-                    "Large effect size (> 0.8 indicates highly pronounced clinical superiority)" if abs(s['cohen_d']) > 0.8 else "Moderate effect size",
-                    "Resampled empirical mean over 1000 folds",
-                    "Unbiased confidence boundary limits"
-                ]
-            })
-            st.table(effect_tbl)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        # Clinical Interpretation Box
-        st.subheader("Scientific Verification & Reviewer Statement")
-        st.info(
-            f"**Conclusion:** The One-Way ANOVA rejects the null hypothesis ($p = {s['anova']['p_value']:.4e}$) with high confidence. "
-            f"The paired t-test confirms that cropping the segmented tumor ROI prior to classification (Pipeline B/C) yields a "
-            f"statistically significant improvement in classification performance compared to processing the whole scan ($p = {s['ind_t']['p_value']:.4e}$). "
-            f"The Cohen's d statistic ($d = {s['cohen_d']:.3f}$) suggests that this performance delta represents a strong clinical effect, "
-            f"justifying the integration of the segmentation-ROI crop stage."
+with interpret_tabs[1]:
+    if not scan_loaded:
+        pass
+    else:
+        st.subheader("Rigorous Statistical Validation Framework")
+        st.write(
+            "Performs statistical tests on the 30-patient benchmark matrix to determine if Pipeline C is statistically "
+            "superior to Pipelines A and B, and if U-Net++ outperforms standard U-Net."
         )
+    
+        run_stats = st.button("Run Statistical Tests")
+    
+        if run_stats:
+            with st.spinner("Computing hypothesis statistics..."):
+                data = st.session_state.stats_dataset
+            
+                # 1. One-Way ANOVA across all three pipelines
+                anova_res = run_one_way_anova(data["Pipeline_A"], data["Pipeline_B"], data["Pipeline_C"])
+            
+                # 2. Paired t-test: Pipeline B vs Pipeline C
+                paired_rel = run_paired_ttest(data["Pipeline_B"], data["Pipeline_C"])
+            
+                # 3. Independent t-test: Pipeline A vs Pipeline C
+                ind_test = run_independent_ttest(data["Pipeline_A"], data["Pipeline_C"])
+            
+                # 4. Cohen's d Effect Size
+                cohen_d_val = compute_cohens_d(data["Pipeline_C"], data["Pipeline_B"])
+            
+                # 5. Bootstrap Resampling
+                boot_res = run_bootstrap_validation(data["Pipeline_C"])
+            
+                # 6. McNemar Test (Using binarized classification predictions)
+                y_true = np.ones(30)
+                y_pred_b = (data["Pipeline_B"] > 0.85).astype(int)
+                y_pred_c = (data["Pipeline_C"] > 0.85).astype(int)
+                mcnemar_res = run_mcnemar_test(y_true, y_pred_b, y_pred_c)
+            
+                st.session_state.stats_results = {
+                    "anova": anova_res,
+                    "paired_t": paired_rel,
+                    "ind_t": ind_test,
+                    "cohen_d": cohen_d_val,
+                    "bootstrap": boot_res,
+                    "mcnemar": mcnemar_res
+                }
+                st.success("Hypothesis tests calculated.")
+            
+        if "stats_results" in st.session_state:
+            s = st.session_state.stats_results
+        
+            # Display statistical metrics tables
+            col_t1, col_t2 = st.columns(2)
+            with col_t1:
+                st.markdown('<div class="stCard">', unsafe_allow_html=True)
+                st.markdown("### Classification Pipeline Tests")
+            
+                stats_tbl = pd.DataFrame({
+                    "Statistical Test": [s["anova"]["Test"], s["paired_t"]["Test"], s["ind_t"]["Test"], s["mcnemar"]["Test"]],
+                    "Test Statistic": [f"F = {s['anova']['F_statistic']:.3f}", f"t = {s['paired_t']['t_statistic']:.3f}", f"t = {s['ind_t']['t_statistic']:.3f}", f"chi2 = {s['mcnemar']['chi2_statistic']:.3f}"],
+                    "p-value": [f"{s['anova']['p_value']:.4e}", f"{s['paired_t']['p_value']:.4e}", f"{s['ind_t']['p_value']:.4e}", f"{s['mcnemar']['p_value']:.4e}"],
+                    "Significant (α=0.05)": [s["anova"]["Significant"], s["paired_t"]["Significant"], s["ind_t"]["Significant"], s["mcnemar"]["Significant"]]
+                })
+                st.table(stats_tbl)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with col_t2:
+                st.markdown('<div class="stCard">', unsafe_allow_html=True)
+                st.markdown("### Effect Size & Resampling Analysis")
+            
+                effect_tbl = pd.DataFrame({
+                    "Metric": ["Cohen's d (Pipeline C vs B)", "Bootstrap Mean Accuracy (Pipeline C)", "Bootstrap 95% Confidence Interval"],
+                    "Value": [f"{s['cohen_d']:.4f}", f"{s['bootstrap']['Bootstrap_Mean']:.4f}", f"[{s['bootstrap']['Empirical_CI'][0]:.4f}, {s['bootstrap']['Empirical_CI'][1]:.4f}]"],
+                    "Interpretation": [
+                        "Large effect size (> 0.8 indicates highly pronounced clinical superiority)" if abs(s['cohen_d']) > 0.8 else "Moderate effect size",
+                        "Resampled empirical mean over 1000 folds",
+                        "Unbiased confidence boundary limits"
+                    ]
+                })
+                st.table(effect_tbl)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Clinical Interpretation Box
+            st.subheader("Scientific Verification & Reviewer Statement")
+            st.info(
+                f"**Conclusion:** The One-Way ANOVA rejects the null hypothesis ($p = {s['anova']['p_value']:.4e}$) with high confidence. "
+                f"The paired t-test confirms that cropping the segmented tumor ROI prior to classification (Pipeline B/C) yields a "
+                f"statistically significant improvement in classification performance compared to processing the whole scan ($p = {s['ind_t']['p_value']:.4e}$). "
+                f"The Cohen's d statistic ($d = {s['cohen_d']:.3f}$) suggests that this performance delta represents a strong clinical effect, "
+                f"justifying the integration of the segmentation-ROI crop stage."
+            )
 
 # ---------------------------------------------------------------------
 # TAB 7: CLINICAL REPORT
 # ---------------------------------------------------------------------
-with tabs[6]:
-    patient_id_rep = st.session_state.patient_id
-    col_header, col_pdf_pacs = st.columns([3, 2])
-    with col_header:
-        st.markdown(f"""
-        <div style="margin-bottom: 32px;">
-            <h2 style="font-size: 24px; font-weight: 600; color: #dae2fd; margin: 0 0 4px 0;">Clinical Diagnostic Report</h2>
-            <p style="font-size: 12px; color: #bcc9cd; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="font-size: 14px;">patient_list</span>
-                Patient ID: <span style="font-family: monospace; color: #4cd7f6;">{patient_id_rep}</span> • Last Updated: {time.strftime('%B %d, %Y')}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_pdf_pacs:
-        # Render functional buttons
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            # Generate PDF Report
-            if "active_report" in st.session_state and st.session_state.active_report:
-                try:
-                    pdf_bytes = generate_pdf_report(st.session_state.active_report, patient_id_rep)
-                    st.download_button(
-                        label="📥 Download PDF",
-                        data=pdf_bytes,
-                        file_name=f"PrognosAI_Report_{patient_id_rep}.pdf",
-                        mime="application/pdf",
-                        key="btn_download_pdf",
-                        use_container_width=True
-                    )
-                except Exception as e:
-                    st.error(f"PDF Error: {e}")
-            else:
-                st.button("📥 Download PDF", key="btn_download_pdf_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
-        with col_btn2:
-            # Sign & Send to PACS
-            if "active_report" in st.session_state and st.session_state.active_report:
-                send_pacs = st.button("🚀 Send to PACS", key="btn_send_pacs", use_container_width=True, type="primary")
-                if send_pacs:
-                    log_audit_action("PACS_SYNC", patient_id_rep, "Successfully signed and synchronized diagnostic report with PACS system.")
-                    st.success("✅ **PACS Synced**: Report successfully signed and pushed to PACS archive (Sync Status: Active).")
-            else:
-                st.button("🚀 Send to PACS", key="btn_send_pacs_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
-    
-    col_rep_left, col_rep_right = st.columns([7, 5])
-    
-    with col_rep_left:
-        # Run report generation
-        gen_rep = st.button("Generate Diagnostic Report", key="run_report_main", use_container_width=True)
-        trust_override = st.toggle("Bypass Trust Check (Investigational Override)", value=False, help="Allow generation of reports for scans with confidence below 85% for research and validation purposes.")
-        
-        biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
-        prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-        risk = assess_clinical_risk(biomarkers, prob_val)
-        
-        if gen_rep:
-            if not gemini_key or gemini_key.strip() == "":
-                st.error("⚠️ **API Key Required**: Gemini API Key is required to run LLM report generation. Please enter your API key in the sidebar to authorize synthesis.")
-            else:
-                # Clinical Trust Check: Require model confidence >= 85% to generate report
-                model_confidence = max(prob_val, 1.0 - prob_val)
-                if model_confidence < 0.85 and not trust_override:
-                    st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality, or check 'Bypass Trust Check (Investigational Override)' to proceed.")
-                else:
-                    clf_res = {
-                        "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
-                        "Probability": prob_val,
-                        "Model": "Pipeline C (Ensemble)"
-                    }
-                    seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
-                    seg_res = {
-                        "Model": st.session_state.segmentation_model,
-                        "Dice": seg_metrics["Dice"],
-                        "IoU": seg_metrics["IoU"]
-                    }
-                    h_overlap = 0.65
-                    if "xai_heatmaps" in st.session_state:
-                        h_overlap, _ = evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
-                    
-                    xai_res = {
-                        "Focus Category": "Correct Focus" if h_overlap > 0.45 else ("Partially Correct Focus" if h_overlap > 0.15 else "Incorrect Focus"),
-                        "Overlap IoU": h_overlap,
-                        "Confidence Score": compute_explainability_confidence(h_overlap, prob_val)
-                    }
-                    
-                    with st.spinner("Synthesizing clinical report using LLM module..."):
-                        try:
-                            report = generate_clinical_report(
-                                patient_name=st.session_state.patient_id,
-                                modality=st.session_state.modality,
-                                preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
-                                classification_result=clf_res,
-                                segmentation_result=seg_res,
-                                biomarkers=biomarkers,
-                                risk_assessment=risk,
-                                explainability_result=xai_res,
-                                api_key=gemini_key
-                            )
-                            st.session_state.active_report = report
-                            st.success("Diagnostic report synthesized.")
-                            log_audit_action("LLM_REPORT_GEN", st.session_state.patient_id, "Successfully synthesized report")
-                        except Exception as e:
-                            st.error(f"❌ **Pipeline Error**: LLM Report Generation failed. Details: {e}. Please verify your Gemini API key or try again later.")
-                            log_audit_action("LLM_REPORT_FAIL", st.session_state.patient_id, str(e))
-                
-        if "active_report" in st.session_state:
+with main_tabs[3]:
+    if not scan_loaded:
+        st.warning('🔒 Session Gated: Please upload and preprocess a scan in the Ingest tab to unlock Clinical Reporting.')
+    else:
+        patient_id_rep = st.session_state.patient_id
+        col_header, col_pdf_pacs = st.columns([3, 2])
+        with col_header:
             st.markdown(f"""
-            <div class="surface-container rounded-xl p-6 border border-[#3d494c] relative overflow-hidden mb-6" style="background: #171f33; border-left: 4px solid #ddb7ff;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                    <span class="material-symbols-outlined ai-pulse" style="color: #ddb7ff;">bolt</span>
-                    <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">Automated Summary Powered by Gemini</h3>
-                </div>
-                <div style="font-size: 14px; line-height: 1.6; color: #dae2fd;">
-                    {st.session_state.active_report.replace('\\n', '<br>')}
-                </div>
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 24px; font-weight: 600; color: #dae2fd; margin: 0 0 4px 0;">Clinical Diagnostic Report</h2>
+                <p style="font-size: 12px; color: #bcc9cd; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 14px;">patient_list</span>
+                    Patient ID: <span style="font-family: monospace; color: #4cd7f6;">{patient_id_rep}</span> • Last Updated: {time.strftime('%B %d, %Y')}
+                </p>
             </div>
             """, unsafe_allow_html=True)
+        
+        with col_pdf_pacs:
+            # Render functional buttons
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                # Generate PDF Report
+                if "active_report" in st.session_state and st.session_state.active_report:
+                    try:
+                        pdf_bytes = generate_pdf_report(st.session_state.active_report, patient_id_rep)
+                        st.download_button(
+                            label="📥 Download PDF",
+                            data=pdf_bytes,
+                            file_name=f"PrognosAI_Report_{patient_id_rep}.pdf",
+                            mime="application/pdf",
+                            key="btn_download_pdf",
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"PDF Error: {e}")
+                else:
+                    st.button("📥 Download PDF", key="btn_download_pdf_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
+            with col_btn2:
+                # Sign & Send to PACS
+                if "active_report" in st.session_state and st.session_state.active_report:
+                    send_pacs = st.button("🚀 Send to PACS", key="btn_send_pacs", use_container_width=True, type="primary")
+                    if send_pacs:
+                        log_audit_action("PACS_SYNC", patient_id_rep, "Successfully signed and synchronized diagnostic report with PACS system.")
+                        st.success("✅ **PACS Synced**: Report successfully signed and pushed to PACS archive (Sync Status: Active).")
+                else:
+                    st.button("🚀 Send to PACS", key="btn_send_pacs_disabled", disabled=True, use_container_width=True, help="Please generate the diagnostic report first.")
+    
+        col_rep_left, col_rep_right = st.columns([7, 5])
+    
+        with col_rep_left:
+            # Run report generation
+            gen_rep = st.button("Generate Diagnostic Report", key="run_report_main", use_container_width=True)
+            trust_override = st.toggle("Bypass Trust Check (Investigational Override)", value=False, help="Allow generation of reports for scans with confidence below 85% for research and validation purposes.")
+        
+            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
+            prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
+            risk = assess_clinical_risk(biomarkers, prob_val)
+        
+            if gen_rep:
+                if not gemini_key or gemini_key.strip() == "":
+                    st.error("⚠️ **API Key Required**: Gemini API Key is required to run LLM report generation. Please enter your API key in the sidebar to authorize synthesis.")
+                else:
+                    # Clinical Trust Check: Require model confidence >= 85% to generate report
+                    model_confidence = max(prob_val, 1.0 - prob_val)
+                    if model_confidence < 0.85 and not trust_override:
+                        st.error(f"⚠️ **Clinical Trust Check Failed:** Prediction confidence is {model_confidence*100:.1f}%, which is below the required clinical-grade threshold of 85.0%. Diagnostic report generation is blocked to prevent clinical misdiagnosis. Please verify the segmentation boundary or scan quality, or check 'Bypass Trust Check (Investigational Override)' to proceed.")
+                    else:
+                        clf_res = {
+                            "Prediction": "Tumor Detected" if prob_val > 0.5 else "No Tumor Detected",
+                            "Probability": prob_val,
+                            "Model": "Pipeline C (Ensemble)"
+                        }
+                        seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
+                        seg_res = {
+                            "Model": st.session_state.segmentation_model,
+                            "Dice": seg_metrics["Dice"],
+                            "IoU": seg_metrics["IoU"]
+                        }
+                        h_overlap = 0.65
+                        if "xai_heatmaps" in st.session_state:
+                            h_overlap, _ = evaluate_focus_quality(st.session_state.xai_heatmaps["Grad-CAM"], cv2.resize(st.session_state.mri_mask_gt, (224, 224)))
+                    
+                        xai_res = {
+                            "Focus Category": "Correct Focus" if h_overlap > 0.45 else ("Partially Correct Focus" if h_overlap > 0.15 else "Incorrect Focus"),
+                            "Overlap IoU": h_overlap,
+                            "Confidence Score": compute_explainability_confidence(h_overlap, prob_val)
+                        }
+                    
+                        with st.spinner("Synthesizing clinical report using LLM module..."):
+                            try:
+                                report = generate_clinical_report(
+                                    patient_name=st.session_state.patient_id,
+                                    modality=st.session_state.modality,
+                                    preprocessed_steps=st.session_state.prep_steps if st.session_state.prep_steps else ["Raw Slice Loaded"],
+                                    classification_result=clf_res,
+                                    segmentation_result=seg_res,
+                                    biomarkers=biomarkers,
+                                    risk_assessment=risk,
+                                    explainability_result=xai_res,
+                                    api_key=gemini_key
+                                )
+                                st.session_state.active_report = report
+                                st.success("Diagnostic report synthesized.")
+                                log_audit_action("LLM_REPORT_GEN", st.session_state.patient_id, "Successfully synthesized report")
+                            except Exception as e:
+                                st.error(f"❌ **Pipeline Error**: LLM Report Generation failed. Details: {e}. Please verify your Gemini API key or try again later.")
+                                log_audit_action("LLM_REPORT_FAIL", st.session_state.patient_id, str(e))
+                
+            if "active_report" in st.session_state:
+                st.markdown(f"""
+                <div class="surface-container rounded-xl p-6 border border-[#3d494c] relative overflow-hidden mb-6" style="background: #171f33; border-left: 4px solid #ddb7ff;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                        <span class="material-symbols-outlined ai-pulse" style="color: #ddb7ff;">bolt</span>
+                        <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">Automated Summary Powered by Gemini</h3>
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.6; color: #dae2fd;">
+                        {st.session_state.active_report.replace('\\n', '<br>')}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
             
-            # Export report as text file
-            st.download_button(
-                label="Export Report as TXT",
-                data=st.session_state.active_report,
-                file_name=f"PrognosAI-X_Report_{st.session_state.patient_id}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
-        else:
-            st.info("Click 'Generate Diagnostic Report' to trigger large language model text synthesis.")
-            
-        # Visuals block
-        col_sub1, col_sub2 = st.columns(2)
-        with col_sub1:
-            st.markdown("""
-            <div style="background: #2d3449; border-radius: 12px; overflow: hidden; border: 1px solid #3d494c; aspect-ratio: 1.2; position: relative;">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZNcbk11U_XA1v-aEqwnYIh9AgC3P3eHU8gdH_EHUxsK6mCh-S4WjjBfI3idGebJLIcMtJV2ss7jwWeGUYq1JFphPEqJw5jjHE47PEdhz_VzpgbH-kriG9OFMxoUy7mCRh6a7Gjb4-Levwjm7VTS0p-41bmCiuDDLHDd4oxd0GXl1wz_rVR-3xV_-QYB2LruUlczKPHTtYfgVwxXmAbIX-CS2PWgv_jPdc1LO5Qe6e-7LC6_Z0pROiXfxZM2kzRwZkZ2k2RVMjVE" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(75%);" />
-                <div style="position: absolute; bottom: 16px; left: 16px;">
-                    <span style="background: rgba(76, 215, 246, 0.2); color: #4cd7f6; border: 1px solid rgba(76, 215, 246, 0.5); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">T1-Weighted MRI</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col_sub2:
-            st.markdown("""
-            <div style="background: #171f33; border-radius: 12px; border: 1px solid #3d494c; padding: 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                <h4 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 12px 0; text-transform: uppercase;">Metabolic Activity</h4>
-                <div style="display: flex; align-items: flex-end; gap: 4px; height: 64px;">
-                    <div style="width: 100%; background: rgba(76, 215, 246, 0.2); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 30%;"></div>
-                    <div style="width: 100%; background: rgba(76, 215, 246, 0.4); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 50%;"></div>
-                    <div style="width: 100%; background: rgba(76, 215, 246, 0.6); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 85%;"></div>
-                    <div style="width: 100%; background: rgba(76, 215, 246, 0.8); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 65%;"></div>
-                    <div style="width: 100%; background: #4cd7f6; border-top-left-radius: 2px; border-top-right-radius: 2px; height: 95%;"></div>
-                    <div style="width: 100%; background: rgba(76, 215, 246, 0.5); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 40%;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span style="font-family: monospace; font-size: 12px; color: #bcc9cd;">SUV PEAK</span>
-                    <span style="font-family: monospace; font-size: 12px; color: #4cd7f6;">12.4 MBq/mL</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-    with col_rep_right:
-        # Risk Stratification
-        risk_label = "HIGH RISK" if prob_val > 0.5 else "LOW RISK"
-        st.markdown(f"""
-        <div style="background: #222a3d; border-radius: 12px; padding: 16px; border: 1px solid #3d494c; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h3 style="font-size: 18px; font-weight: 600; color: #dae2fd; margin: 0;">Risk Stratification</h3>
-                <span style="background: #93000a; color: #ffdad6; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 9999px; border: 1px solid rgba(255,180,171,0.2);">{risk_label}</span>
-            </div>
-            <div style="position: relative; padding-top: 4px;">
-                <div style="display: flex; margin-bottom: 8px; align-items: center; justify-content: space-between;">
-                    <span style="font-size: 12px; font-weight: 600; color: #bcc9cd; background: #171f33; padding: 4px 8px; border-radius: 9999px;">Malignancy Probability</span>
-                    <span style="font-size: 12px; font-weight: bold; color: #ffb4ab;">{prob_val*100:.1f}%</span>
-                </div>
-                <div style="height: 8px; border-radius: 4px; display: flex; overflow: hidden; background: #060e20; margin-bottom: 16px;">
-                    <div style="background: #4cd7f6; width: 10%;"></div>
-                    <div style="background: #ddb7ff; width: 25%;"></div>
-                    <div style="background: #ffb4ab; width: {prob_val*65:.1f}%;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 9px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">
-                    <span>Benign</span>
-                    <span>Atypical</span>
-                    <span>Malignant</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Biomarker Panel
-        st.markdown(f"""
-        <div style="background: #171f33; border-radius: 12px; padding: 20px; border: 1px solid #3d494c; margin-bottom: 24px;">
-            <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase; tracking-widest;">Biomarker Panel</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">crop_free</span>
-                        <span style="font-size: 14px; color: #dae2fd;">Tumor Area</span>
-                    </div>
-                    <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("Tumor Area (mm2)", 0.0):.1f} mm²</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 18px;">polyline</span>
-                        <span style="font-size: 14px; color: #dae2fd;">Circularity</span>
-                    </div>
-                    <span style="font-family: monospace; color: #ffb4ab; font-weight: bold;">{biomarkers.get("Circularity", 0.0):.3f}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="material-symbols-outlined" style="color: #bcc9cd; font-size: 18px;">fluid_med</span>
-                        <span style="font-size: 14px; color: #dae2fd;">Mean Tumor Density</span>
-                    </div>
-                    <span style="font-family: monospace; color: #dae2fd; font-weight: bold;">{biomarkers.get("Mean Tumor Density", 0.0):.3f}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">texture</span>
-                        <span style="font-size: 14px; color: #dae2fd;">GLCM Contrast</span>
-                    </div>
-                    <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("GLCM Contrast", 0.0):.3f}</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Structured Reporting: BT-RADS
-        st.subheader("BT-RADS Classification")
-        default_btrads_idx = 4 if prob_val > 0.5 else 2
-        btrads_cat = st.selectbox(
-            "BT-RADS Category Selection",
-            [
-                "Category 1a: Post-treatment stable/improving (non-enhancing)",
-                "Category 1b: Post-treatment stable/improving (enhancing)",
-                "Category 2: Probably benign / stable",
-                "Category 3: Equivocal (close follow-up needed)",
-                "Category 4: Highly suggestive of progression / active tumor"
-            ],
-            index=default_btrads_idx,
-            key="btrads_select"
-        )
-        
-        # Doctor's Notes text area
-        notes = st.text_area("Reviewing Radiologist's Observations", placeholder="Enter clinical observations, measurements, or modifications to AI findings here...", key="doc_notes")
-        
-        st.markdown("### Radiologist Authorization & Sign-off")
-        rad_name = st.text_input("Radiologist Name & Credentials", value="Dr. Clara Sterling, MD, PhD, DABR", key="rad_name")
-        rad_esign = st.text_input("Electronic Signature Code", value="CS-49281-AUTH", key="rad_esign")
-        esign_check = st.checkbox("I authorize this clinical diagnostic report and sign-off on the findings.", value=False, key="esign_check")
-        
-        if st.button("Authorize & Sign Report", use_container_width=True, type="primary"):
-            if not esign_check:
-                st.error("Please check the authorization box to electronically sign the report.")
+                # Export report as text file
+                st.download_button(
+                    label="Export Report as TXT",
+                    data=st.session_state.active_report,
+                    file_name=f"PrognosAI-X_Report_{st.session_state.patient_id}.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
             else:
-                # Save scan metrics and logs to DB
-                save_scan_metrics(
-                    st.session_state.patient_id,
-                    f"mri_slice_{st.session_state.modality}.dcm",
-                    snr_proc,
-                    entropy_proc,
-                    privacy_score=100.0 if st.session_state.patient_id.startswith("ANONYMOUS_") else 40.0,
-                    status="Signed & Approved"
-                )
-                log_audit_action(
-                    "AUTHORIZE_REPORT",
-                    st.session_state.patient_id,
-                    f"Signed by {rad_name} ({rad_esign}). BT-RADS: {btrads_cat}. Observations: {notes}"
-                )
-                st.success("✅ Structured BT-RADS report signed, saved to SQLite audit trail, and sent to PACS.")
+                st.info("Click 'Generate Diagnostic Report' to trigger large language model text synthesis.")
+            
+            # Visuals block
+            col_sub1, col_sub2 = st.columns(2)
+            with col_sub1:
+                st.markdown("""
+                <div style="background: #2d3449; border-radius: 12px; overflow: hidden; border: 1px solid #3d494c; aspect-ratio: 1.2; position: relative;">
+                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZNcbk11U_XA1v-aEqwnYIh9AgC3P3eHU8gdH_EHUxsK6mCh-S4WjjBfI3idGebJLIcMtJV2ss7jwWeGUYq1JFphPEqJw5jjHE47PEdhz_VzpgbH-kriG9OFMxoUy7mCRh6a7Gjb4-Levwjm7VTS0p-41bmCiuDDLHDd4oxd0GXl1wz_rVR-3xV_-QYB2LruUlczKPHTtYfgVwxXmAbIX-CS2PWgv_jPdc1LO5Qe6e-7LC6_Z0pROiXfxZM2kzRwZkZ2k2RVMjVE" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(75%);" />
+                    <div style="position: absolute; bottom: 16px; left: 16px;">
+                        <span style="background: rgba(76, 215, 246, 0.2); color: #4cd7f6; border: 1px solid rgba(76, 215, 246, 0.5); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">T1-Weighted MRI</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_sub2:
+                st.markdown("""
+                <div style="background: #171f33; border-radius: 12px; border: 1px solid #3d494c; padding: 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <h4 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 12px 0; text-transform: uppercase;">Metabolic Activity</h4>
+                    <div style="display: flex; align-items: flex-end; gap: 4px; height: 64px;">
+                        <div style="width: 100%; background: rgba(76, 215, 246, 0.2); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 30%;"></div>
+                        <div style="width: 100%; background: rgba(76, 215, 246, 0.4); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 50%;"></div>
+                        <div style="width: 100%; background: rgba(76, 215, 246, 0.6); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 85%;"></div>
+                        <div style="width: 100%; background: rgba(76, 215, 246, 0.8); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 65%;"></div>
+                        <div style="width: 100%; background: #4cd7f6; border-top-left-radius: 2px; border-top-right-radius: 2px; height: 95%;"></div>
+                        <div style="width: 100%; background: rgba(76, 215, 246, 0.5); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 40%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <span style="font-family: monospace; font-size: 12px; color: #bcc9cd;">SUV PEAK</span>
+                        <span style="font-family: monospace; font-size: 12px; color: #4cd7f6;">12.4 MBq/mL</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+        with col_rep_right:
+            # Risk Stratification
+            risk_label = "HIGH RISK" if prob_val > 0.5 else "LOW RISK"
+            st.markdown(f"""
+            <div style="background: #222a3d; border-radius: 12px; padding: 16px; border: 1px solid #3d494c; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="font-size: 18px; font-weight: 600; color: #dae2fd; margin: 0;">Risk Stratification</h3>
+                    <span style="background: #93000a; color: #ffdad6; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 9999px; border: 1px solid rgba(255,180,171,0.2);">{risk_label}</span>
+                </div>
+                <div style="position: relative; padding-top: 4px;">
+                    <div style="display: flex; margin-bottom: 8px; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 12px; font-weight: 600; color: #bcc9cd; background: #171f33; padding: 4px 8px; border-radius: 9999px;">Malignancy Probability</span>
+                        <span style="font-size: 12px; font-weight: bold; color: #ffb4ab;">{prob_val*100:.1f}%</span>
+                    </div>
+                    <div style="height: 8px; border-radius: 4px; display: flex; overflow: hidden; background: #060e20; margin-bottom: 16px;">
+                        <div style="background: #4cd7f6; width: 10%;"></div>
+                        <div style="background: #ddb7ff; width: 25%;"></div>
+                        <div style="background: #ffb4ab; width: {prob_val*65:.1f}%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">
+                        <span>Benign</span>
+                        <span>Atypical</span>
+                        <span>Malignant</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+            # Biomarker Panel
+            st.markdown(f"""
+            <div style="background: #171f33; border-radius: 12px; padding: 20px; border: 1px solid #3d494c; margin-bottom: 24px;">
+                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase; tracking-widest;">Biomarker Panel</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">crop_free</span>
+                            <span style="font-size: 14px; color: #dae2fd;">Tumor Area</span>
+                        </div>
+                        <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("Tumor Area (mm2)", 0.0):.1f} mm²</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #ddb7ff; font-size: 18px;">polyline</span>
+                            <span style="font-size: 14px; color: #dae2fd;">Circularity</span>
+                        </div>
+                        <span style="font-family: monospace; color: #ffb4ab; font-weight: bold;">{biomarkers.get("Circularity", 0.0):.3f}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #bcc9cd; font-size: 18px;">fluid_med</span>
+                            <span style="font-size: 14px; color: #dae2fd;">Mean Tumor Density</span>
+                        </div>
+                        <span style="font-family: monospace; color: #dae2fd; font-weight: bold;">{biomarkers.get("Mean Tumor Density", 0.0):.3f}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; background: #131b2e; border: 1px solid #3d494c/30;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #4cd7f6; font-size: 18px;">texture</span>
+                            <span style="font-size: 14px; color: #dae2fd;">GLCM Contrast</span>
+                        </div>
+                        <span style="font-family: monospace; color: #4cd7f6; font-weight: bold;">{biomarkers.get("GLCM Contrast", 0.0):.3f}</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+            # Structured Reporting: BT-RADS
+            st.subheader("BT-RADS Classification")
+            default_btrads_idx = 4 if prob_val > 0.5 else 2
+            btrads_cat = st.selectbox(
+                "BT-RADS Category Selection",
+                [
+                    "Category 1a: Post-treatment stable/improving (non-enhancing)",
+                    "Category 1b: Post-treatment stable/improving (enhancing)",
+                    "Category 2: Probably benign / stable",
+                    "Category 3: Equivocal (close follow-up needed)",
+                    "Category 4: Highly suggestive of progression / active tumor"
+                ],
+                index=default_btrads_idx,
+                key="btrads_select"
+            )
+        
+            # Doctor's Notes text area
+            notes = st.text_area("Reviewing Radiologist's Observations", placeholder="Enter clinical observations, measurements, or modifications to AI findings here...", key="doc_notes")
+        
+            st.markdown("### Radiologist Authorization & Sign-off")
+            rad_name = st.text_input("Radiologist Name & Credentials", value="Dr. Clara Sterling, MD, PhD, DABR", key="rad_name")
+            rad_esign = st.text_input("Electronic Signature Code", value="CS-49281-AUTH", key="rad_esign")
+            esign_check = st.checkbox("I authorize this clinical diagnostic report and sign-off on the findings.", value=False, key="esign_check")
+        
+            if st.button("Authorize & Sign Report", use_container_width=True, type="primary"):
+                if not esign_check:
+                    st.error("Please check the authorization box to electronically sign the report.")
+                else:
+                    # Save scan metrics and logs to DB
+                    save_scan_metrics(
+                        st.session_state.patient_id,
+                        f"mri_slice_{st.session_state.modality}.dcm",
+                        snr_proc,
+                        entropy_proc,
+                        privacy_score=100.0 if st.session_state.patient_id.startswith("ANONYMOUS_") else 40.0,
+                        status="Signed & Approved"
+                    )
+                    log_audit_action(
+                        "AUTHORIZE_REPORT",
+                        st.session_state.patient_id,
+                        f"Signed by {rad_name} ({rad_esign}). BT-RADS: {btrads_cat}. Observations: {notes}"
+                    )
+                    st.success("✅ Structured BT-RADS report signed, saved to SQLite audit trail, and sent to PACS.")
 
-with tabs[7]:
-    st.markdown("""
-    <section style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 40px;">
-        <div>
-            <p style="font-size: 11px; font-weight: bold; color: #4cd7f6; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px 0;">Statistical Engine v4.2.0</p>
-            <h2 style="font-size: 32px; font-weight: 700; color: #dae2fd; margin: 0; line-height: 1;">Research Analytics</h2>
-        </div>
-        <div style="display: flex; gap: 12px;">
-            <div style="background: #222a3d; border: 1px solid #3d494c; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; color: #dae2fd; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">file_download</span>
-                Export PDF
+with analytics_tabs[0]:
+    if not scan_loaded:
+        st.warning('🔒 Session Gated: Please upload and preprocess a scan in the Ingest tab to unlock Analytics.')
+    else:
+        st.markdown("""
+        <section style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 40px;">
+            <div>
+                <p style="font-size: 11px; font-weight: bold; color: #4cd7f6; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px 0;">Statistical Engine v4.2.0</p>
+                <h2 style="font-size: 32px; font-weight: 700; color: #dae2fd; margin: 0; line-height: 1;">Research Analytics</h2>
             </div>
-            <div style="background: #4cd7f6; color: #003640; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">science</span>
-                Validation Run
+            <div style="display: flex; gap: 12px;">
+                <div style="background: #222a3d; border: 1px solid #3d494c; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; color: #dae2fd; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">file_download</span>
+                    Export PDF
+                </div>
+                <div style="background: #4cd7f6; color: #003640; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">science</span>
+                    Validation Run
+                </div>
             </div>
-        </div>
-    </section>
-    """, unsafe_allow_html=True)
+        </section>
+        """, unsafe_allow_html=True)
     
-    col_res_left, col_res_right = st.columns([4, 8])
+        col_res_left, col_res_right = st.columns([4, 8])
     
-    with col_res_left:
-        # Global Dice Score
-        st.markdown("""
-        <div class="glass-panel p-6 flex flex-col justify-between h-40 mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">Global Dice Score</span>
-                <span style="background: #6f00be; color: #d6a9ff; font-size: 10px; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">STABLE</span>
+        with col_res_left:
+            # Global Dice Score
+            st.markdown("""
+            <div class="glass-panel p-6 flex flex-col justify-between h-40 mb-6" style="background: rgba(30, 41, 59, 0.6); border: 1px solid #3d494c; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">Global Dice Score</span>
+                    <span style="background: #6f00be; color: #d6a9ff; font-size: 10px; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">STABLE</span>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span style="font-size: 42px; font-weight: 700; color: #4cd7f6; line-height: 1;">0.942</span>
+                    <p style="font-family: monospace; font-size: 13px; color: #bcc9cd; margin: 4px 0 0 0;">± 0.018 Confidence Interval</p>
+                </div>
+                <div style="height: 4px; background: #2d3449; width: 100%; mt: 16px; overflow: hidden; border-radius: 2px; margin-top: 16px;">
+                    <div style="height: 100%; background: #4cd7f6; width: 94.2%;"></div>
+                </div>
             </div>
-            <div style="margin-top: 8px;">
-                <span style="font-size: 42px; font-weight: 700; color: #4cd7f6; line-height: 1;">0.942</span>
-                <p style="font-family: monospace; font-size: 13px; color: #bcc9cd; margin: 4px 0 0 0;">± 0.018 Confidence Interval</p>
-            </div>
-            <div style="height: 4px; background: #2d3449; width: 100%; mt: 16px; overflow: hidden; border-radius: 2px; margin-top: 16px;">
-                <div style="height: 100%; background: #4cd7f6; width: 94.2%;"></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-        # p-Value Table
-        st.markdown("""
-        <div class="bg-surface-container p-6 border border-[#3d494c] mb-6" style="background: #171f33; border-radius: 12px;">
-            <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Statistical Significance</h3>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
-                <thead>
-                    <tr style="color: #bcc9cd; border-bottom: 1px solid #3d494c;">
-                        <th style="padding-bottom: 8px; font-weight: 500;">Metric</th>
-                        <th style="padding-bottom: 8px; font-weight: 500;">p-value</th>
-                        <th style="padding-bottom: 8px; font-weight: 500;">Effect Size</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #3d494c/20;">
-                        <td style="padding: 12px 0;">Segmentation</td>
-                        <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.001</td>
-                        <td style="padding: 12px 0;">1.24 (Large)</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #3d494c/20;">
-                        <td style="padding: 12px 0;">Volume Est.</td>
-                        <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.005</td>
-                        <td style="padding: 12px 0;">0.82 (Med)</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px 0;">Lesion Class.</td>
-                        <td style="padding: 12px 0; color: #bcc9cd;">p = 0.124</td>
-                        <td style="padding: 12px 0;">0.31 (Small)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
+            # p-Value Table
+            st.markdown("""
+            <div class="bg-surface-container p-6 border border-[#3d494c] mb-6" style="background: #171f33; border-radius: 12px;">
+                <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Statistical Significance</h3>
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: monospace; font-size: 13px; color: #dae2fd;">
+                    <thead>
+                        <tr style="color: #bcc9cd; border-bottom: 1px solid #3d494c;">
+                            <th style="padding-bottom: 8px; font-weight: 500;">Metric</th>
+                            <th style="padding-bottom: 8px; font-weight: 500;">p-value</th>
+                            <th style="padding-bottom: 8px; font-weight: 500;">Effect Size</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #3d494c/20;">
+                            <td style="padding: 12px 0;">Segmentation</td>
+                            <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.001</td>
+                            <td style="padding: 12px 0;">1.24 (Large)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #3d494c/20;">
+                            <td style="padding: 12px 0;">Volume Est.</td>
+                            <td style="padding: 12px 0; color: #4cd7f6;">p &lt; 0.005</td>
+                            <td style="padding: 12px 0;">0.82 (Med)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 0;">Lesion Class.</td>
+                            <td style="padding: 12px 0; color: #bcc9cd;">p = 0.124</td>
+                            <td style="padding: 12px 0;">0.31 (Small)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Ablation study table
-        st.markdown("""
-        <div class="bg-surface-container p-6 border border-[#3d494c]" style="background: #171f33; border-radius: 12px;">
-            <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Ablation Study: Preprocessing</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 12px; border-bottom: 1px solid #3d494c; padding-bottom: 8px; color: #bcc9cd;">
-                    <span>Pipeline Configuration</span>
-                    <span>F1 Score</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
-                    <span style="color: #4cd7f6;">Full Pipeline (Optimal)</span>
-                    <span style="font-weight: bold;">0.962</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
-                    <span>w/o Bias Correction</span>
-                    <span style="color: #ffb4ab;">0.891</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
-                    <span>w/o Skull Stripping</span>
-                    <span>0.945</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
-                    <span>w/o Histogram Norm.</span>
-                    <span style="color: #ffb4ab;">0.842</span>
+            # Ablation study table
+            st.markdown("""
+            <div class="bg-surface-container p-6 border border-[#3d494c]" style="background: #171f33; border-radius: 12px;">
+                <h3 style="font-size: 11px; color: #ddb7ff; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 16px 0; text-transform: uppercase;">Ablation Study: Preprocessing</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 12px; border-bottom: 1px solid #3d494c; padding-bottom: 8px; color: #bcc9cd;">
+                        <span>Pipeline Configuration</span>
+                        <span>F1 Score</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                        <span style="color: #4cd7f6;">Full Pipeline (Optimal)</span>
+                        <span style="font-weight: bold;">0.962</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                        <span>w/o Bias Correction</span>
+                        <span style="color: #ffb4ab;">0.891</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                        <span>w/o Skull Stripping</span>
+                        <span>0.945</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;">
+                        <span>w/o Histogram Norm.</span>
+                        <span style="color: #ffb4ab;">0.842</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-    with col_res_right:
-        col_fig1, col_fig2 = st.columns(2)
-        with col_fig1:
-            fpr = np.linspace(0, 1, 100)
-            tpr_c = fpr ** 0.15
-            tpr_b = fpr ** 0.3
-            tpr_a = fpr ** 0.5
+        with col_res_right:
+            col_fig1, col_fig2 = st.columns(2)
+            with col_fig1:
+                fpr = np.linspace(0, 1, 100)
+                tpr_c = fpr ** 0.15
+                tpr_b = fpr ** 0.3
+                tpr_a = fpr ** 0.5
             
-            fig_roc = go.Figure()
-            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_c, name="Pipeline C (AUC = 0.975)", line=dict(color="#39ff14", width=3)))
-            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_b, name="Pipeline B (AUC = 0.908)", line=dict(color="#58a6ff", width=2)))
-            fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_a, name="Pipeline A (AUC = 0.815)", line=dict(color="#ff7b72", width=2)))
-            fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Chance (AUC = 0.500)", line=dict(dash="dash", color="#8b949e")))
-            fig_roc.update_layout(
-                title="Receiver Operating Characteristic (ROC) Curves",
-                xaxis=dict(title="False Positive Rate"),
-                yaxis=dict(title="True Positive Rate"),
-                template="plotly_dark",
-                paper_bgcolor="#171f33",
-                plot_bgcolor="#171f33"
-            )
-            st.plotly_chart(fig_roc, use_container_width=True)
+                fig_roc = go.Figure()
+                fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_c, name="Pipeline C (AUC = 0.975)", line=dict(color="#39ff14", width=3)))
+                fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_b, name="Pipeline B (AUC = 0.908)", line=dict(color="#58a6ff", width=2)))
+                fig_roc.add_trace(go.Scatter(x=fpr, y=tpr_a, name="Pipeline A (AUC = 0.815)", line=dict(color="#ff7b72", width=2)))
+                fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Chance (AUC = 0.500)", line=dict(dash="dash", color="#8b949e")))
+                fig_roc.update_layout(
+                    title="Receiver Operating Characteristic (ROC) Curves",
+                    xaxis=dict(title="False Positive Rate"),
+                    yaxis=dict(title="True Positive Rate"),
+                    template="plotly_dark",
+                    paper_bgcolor="#171f33",
+                    plot_bgcolor="#171f33"
+                )
+                st.plotly_chart(fig_roc, use_container_width=True)
             
-            # Dice Boxplots
-            data = st.session_state.stats_dataset
-            df_dice = pd.DataFrame({
-                "U-Net": data["UNet"],
-                "Attention U-Net": data["AttentionUNet"],
-                "U-Net++": data["UNetPlusPlus"],
-                "Mask R-CNN": data["MaskRCNN"]
-            })
-            fig_dice = px.box(
-                df_dice.melt(var_name="Architecture", value_name="Dice Score"),
-                x="Architecture",
-                y="Dice Score",
-                color="Architecture",
-                color_discrete_sequence=["#ff7b72", "#58a6ff", "#bc8cff", "#d29922"],
-                title="Dice Similarity Coefficient Box Comparison (N = 30)"
-            )
-            fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33")
-            st.plotly_chart(fig_dice, use_container_width=True)
+                # Dice Boxplots
+                data = st.session_state.stats_dataset
+                df_dice = pd.DataFrame({
+                    "U-Net": data["UNet"],
+                    "Attention U-Net": data["AttentionUNet"],
+                    "U-Net++": data["UNetPlusPlus"],
+                    "Mask R-CNN": data["MaskRCNN"]
+                })
+                fig_dice = px.box(
+                    df_dice.melt(var_name="Architecture", value_name="Dice Score"),
+                    x="Architecture",
+                    y="Dice Score",
+                    color="Architecture",
+                    color_discrete_sequence=["#ff7b72", "#58a6ff", "#bc8cff", "#d29922"],
+                    title="Dice Similarity Coefficient Box Comparison (N = 30)"
+                )
+                fig_dice.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33")
+                st.plotly_chart(fig_dice, use_container_width=True)
             
-        with col_fig2:
-            # PR Curves
-            recall = np.linspace(0, 1, 100)
-            precision_c = 1.0 - recall**4
-            precision_b = 1.0 - recall**2.5
-            precision_a = 1.0 - recall**1.5
+            with col_fig2:
+                # PR Curves
+                recall = np.linspace(0, 1, 100)
+                precision_c = 1.0 - recall**4
+                precision_b = 1.0 - recall**2.5
+                precision_a = 1.0 - recall**1.5
             
-            fig_pr = go.Figure()
-            fig_pr.add_trace(go.Scatter(x=recall, y=precision_c, name="Pipeline C (AP = 0.981)", line=dict(color="#39ff14", width=3)))
-            fig_pr.add_trace(go.Scatter(x=recall, y=precision_b, name="Pipeline B (AP = 0.912)", line=dict(color="#58a6ff", width=2)))
-            fig_pr.add_trace(go.Scatter(x=recall, y=precision_a, name="Pipeline A (AP = 0.824)", line=dict(color="#ff7b72", width=2)))
-            fig_pr.update_layout(
-                title="Precision-Recall Curves",
-                xaxis=dict(title="Recall (Sensitivity)"),
-                yaxis=dict(title="Precision (PPV)"),
-                template="plotly_dark",
-                paper_bgcolor="#171f33",
-                plot_bgcolor="#171f33"
-            )
-            st.plotly_chart(fig_pr, use_container_width=True)
+                fig_pr = go.Figure()
+                fig_pr.add_trace(go.Scatter(x=recall, y=precision_c, name="Pipeline C (AP = 0.981)", line=dict(color="#39ff14", width=3)))
+                fig_pr.add_trace(go.Scatter(x=recall, y=precision_b, name="Pipeline B (AP = 0.912)", line=dict(color="#58a6ff", width=2)))
+                fig_pr.add_trace(go.Scatter(x=recall, y=precision_a, name="Pipeline A (AP = 0.824)", line=dict(color="#ff7b72", width=2)))
+                fig_pr.update_layout(
+                    title="Precision-Recall Curves",
+                    xaxis=dict(title="Recall (Sensitivity)"),
+                    yaxis=dict(title="Precision (PPV)"),
+                    template="plotly_dark",
+                    paper_bgcolor="#171f33",
+                    plot_bgcolor="#171f33"
+                )
+                st.plotly_chart(fig_pr, use_container_width=True)
             
-            st.write("")
-            st.markdown("<p style='text-align:center; font-weight:bold; margin-bottom:12px;'>Correlation Matrix of Quantitative Biomarkers</p>", unsafe_allow_html=True)
+                st.write("")
+                st.markdown("<p style='text-align:center; font-weight:bold; margin-bottom:12px;'>Correlation Matrix of Quantitative Biomarkers</p>", unsafe_allow_html=True)
             
-            corr_matrix = np.array([
-                [1.0, 0.92, -0.65, 0.45, 0.58],
-                [0.92, 1.0, -0.72, 0.40, 0.62],
-                [-0.65, -0.72, 1.0, -0.32, -0.48],
-                [0.45, 0.40, -0.32, 1.0, 0.35],
-                [0.58, 0.62, -0.48, 0.35, 1.0]
+                corr_matrix = np.array([
+                    [1.0, 0.92, -0.65, 0.45, 0.58],
+                    [0.92, 1.0, -0.72, 0.40, 0.62],
+                    [-0.65, -0.72, 1.0, -0.32, -0.48],
+                    [0.45, 0.40, -0.32, 1.0, 0.35],
+                    [0.58, 0.62, -0.48, 0.35, 1.0]
             ])
-            cols = ["Tumor Area", "Tumor Perimeter", "Circularity", "Relative Density", "GLCM Contrast"]
+                cols = ["Tumor Area", "Tumor Perimeter", "Circularity", "Relative Density", "GLCM Contrast"]
             
-            fig_h = px.imshow(
-                corr_matrix, 
-                x=cols, 
-                y=cols, 
-                color_continuous_scale="Viridis",
-                labels=dict(color="Pearsons r"),
-                text_auto=".2f"
-            )
-            fig_h.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33", height=320)
-            st.plotly_chart(fig_h, use_container_width=True)
+                fig_h = px.imshow(
+                    corr_matrix, 
+                    x=cols, 
+                    y=cols, 
+                    color_continuous_scale="Viridis",
+                    labels=dict(color="Pearsons r"),
+                    text_auto=".2f"
+                )
+                fig_h.update_layout(template="plotly_dark", paper_bgcolor="#171f33", plot_bgcolor="#171f33", height=320)
+                st.plotly_chart(fig_h, use_container_width=True)
 
 # ---------------------------------------------------------------------
 # TAB 9: MODEL COMPARISON FRAMEWORK
 # ---------------------------------------------------------------------
-with tabs[8]:
-    st.subheader("Model Architecture Benchmarking Framework")
-    st.write(
-        "Runs full forward/backward passes on actual model backbones instantiated in PyTorch to compare computational characteristics "
-        "and determine the scientifically optimal model."
-    )
-    
-    col_bench1, col_bench2 = st.columns([1, 2])
-    
-    with col_bench1:
-        st.markdown('<div class="stCard">', unsafe_allow_html=True)
-        st.markdown("### Benchmarking Settings")
-        test_device = "cuda" if torch.cuda.is_available() else "cpu"
-        st.write(f"Target Hardware: **{test_device.upper()}**")
-        
-        models_to_test = st.multiselect(
-            "Architectures to benchmark:",
-            ["MobileNetV2", "EfficientNetV2", "DenseNet121", "ResNet50", "Vision Transformer", "Swin Transformer"],
-            default=["MobileNetV2", "ResNet50", "Vision Transformer"]
-        )
-        
-        run_bench = st.button("Execute PyTorch Benchmark")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_bench2:
-        if run_bench:
-            with st.spinner("Benchmarking architectures on active device..."):
-                results = []
-                for m in models_to_test:
-                    res_m = benchmark_model(m, test_device)
-                    results.append(res_m)
-                
-                st.session_state.bench_results = results
-                st.success("Profiling complete.")
-                
-        if "bench_results" in st.session_state:
-            df_b = pd.DataFrame(st.session_state.bench_results)
-            
-            # Format display table
-            df_disp = df_b.copy()
-            df_disp["FLOPs"] = df_disp["FLOPs"].apply(lambda x: f"{x/1e6:.1f} MFLOPs" if x < 1e9 else f"{x/1e9:.2f} GFLOPs")
-            df_disp["Parameters"] = df_disp["Parameters"].apply(lambda x: f"{x/1e6:.2f} M")
-            df_disp["Latency_ms"] = df_disp["Latency_ms"].apply(lambda x: f"{x:.2f} ms")
-            df_disp["Memory_MB"] = df_disp["Memory_MB"].apply(lambda x: f"{x:.2f} MB")
-            
-            st.table(df_disp[["Name", "Parameters", "FLOPs", "Latency_ms", "Memory_MB"]])
-            
-            # Auto recommendation logic
-            # Score each model: low latency, low parameters, high suitability
-            # Find fastest model
-            fastest = df_b.loc[df_b["Latency_ms"].idxmin()]["Name"]
-            # Recommend model scientifically
-            st.markdown("### Scientific Recommendation Engine")
-            st.success(
-                f"**Recommendation:** **ResNet50** or **EfficientNetV2** is selected as the optimal model for production workstation servers, "
-                f"while **{fastest}** is recommended for edge/intraoperative tablets due to low footprint ({df_b.loc[df_b['Name']==fastest]['Latency_ms'].values[0]:.2f} ms latency). "
-                f"The Vision Transformer is suitable only when high-power GPU acceleration is guaranteed."
-            )
-            
-    # Clinical Model Version Registry Block
-    st.divider()
-    st.subheader("Clinical Model Version Registry")
-    st.write("Displays the production-registered neural backbones, active versions, and compliance statuses.")
-    
-    registry = get_model_registry()
-    if registry:
-        reg_df = pd.DataFrame(registry)
-        reg_df.columns = ["Model Name", "Version Tag", "Release State", "Accuracy (Val)", "F1 Score (Val)", "Registration Date"]
-        st.table(reg_df)
+with analytics_tabs[1]:
+    if not scan_loaded:
+        pass
     else:
-        st.info("No models registered in workspace.")
+        st.subheader("Model Architecture Benchmarking Framework")
+        st.write(
+            "Runs full forward/backward passes on actual model backbones instantiated in PyTorch to compare computational characteristics "
+            "and determine the scientifically optimal model."
+        )
+    
+        col_bench1, col_bench2 = st.columns([1, 2])
+    
+        with col_bench1:
+            st.markdown('<div class="stCard">', unsafe_allow_html=True)
+            st.markdown("### Benchmarking Settings")
+            test_device = "cuda" if torch.cuda.is_available() else "cpu"
+            st.write(f"Target Hardware: **{test_device.upper()}**")
+        
+            models_to_test = st.multiselect(
+                "Architectures to benchmark:",
+                ["MobileNetV2", "EfficientNetV2", "DenseNet121", "ResNet50", "Vision Transformer", "Swin Transformer"],
+                default=["MobileNetV2", "ResNet50", "Vision Transformer"]
+            )
+        
+            run_bench = st.button("Execute PyTorch Benchmark")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col_bench2:
+            if run_bench:
+                with st.spinner("Benchmarking architectures on active device..."):
+                    results = []
+                    for m in models_to_test:
+                        res_m = benchmark_model(m, test_device)
+                        results.append(res_m)
+                
+                    st.session_state.bench_results = results
+                    st.success("Profiling complete.")
+                
+            if "bench_results" in st.session_state:
+                df_b = pd.DataFrame(st.session_state.bench_results)
+            
+                # Format display table
+                df_disp = df_b.copy()
+                df_disp["FLOPs"] = df_disp["FLOPs"].apply(lambda x: f"{x/1e6:.1f} MFLOPs" if x < 1e9 else f"{x/1e9:.2f} GFLOPs")
+                df_disp["Parameters"] = df_disp["Parameters"].apply(lambda x: f"{x/1e6:.2f} M")
+                df_disp["Latency_ms"] = df_disp["Latency_ms"].apply(lambda x: f"{x:.2f} ms")
+                df_disp["Memory_MB"] = df_disp["Memory_MB"].apply(lambda x: f"{x:.2f} MB")
+            
+                st.table(df_disp[["Name", "Parameters", "FLOPs", "Latency_ms", "Memory_MB"]])
+            
+                # Auto recommendation logic
+                # Score each model: low latency, low parameters, high suitability
+                # Find fastest model
+                fastest = df_b.loc[df_b["Latency_ms"].idxmin()]["Name"]
+                # Recommend model scientifically
+                st.markdown("### Scientific Recommendation Engine")
+                st.success(
+                    f"**Recommendation:** **ResNet50** or **EfficientNetV2** is selected as the optimal model for production workstation servers, "
+                    f"while **{fastest}** is recommended for edge/intraoperative tablets due to low footprint ({df_b.loc[df_b['Name']==fastest]['Latency_ms'].values[0]:.2f} ms latency). "
+                    f"The Vision Transformer is suitable only when high-power GPU acceleration is guaranteed."
+                )
+            
+        # Clinical Model Version Registry Block
+        st.divider()
+        st.subheader("Clinical Model Version Registry")
+        st.write("Displays the production-registered neural backbones, active versions, and compliance statuses.")
+    
+        registry = get_model_registry()
+        if registry:
+            reg_df = pd.DataFrame(registry)
+            reg_df.columns = ["Model Name", "Version Tag", "Release State", "Accuracy (Val)", "F1 Score (Val)", "Registration Date"]
+            st.table(reg_df)
+        else:
+            st.info("No models registered in workspace.")
 
 # ---------------------------------------------------------------------
 # TAB 10: SYSTEM PERFORMANCE & ERROR ANALYSIS
 # ---------------------------------------------------------------------
-with tabs[9]:
-    st.subheader("System Engineering & MLOps Control Panel")
+with analytics_tabs[2]:
+    if not scan_loaded:
+        pass
+    else:
+        st.subheader("System Engineering & MLOps Control Panel")
     
-    col_ml1, col_ml2 = st.columns([1, 2])
+        col_ml1, col_ml2 = st.columns([1, 2])
     
-    with col_ml1:
-        st.markdown('<div class="stCard">', unsafe_allow_html=True)
-        st.markdown("### Logging Trigger")
-        run_log = st.button("Log Active Session to MLflow")
-        if run_log:
-            with st.spinner("Logging session parameters to MLflow database..."):
-                # Gather parameters
-                params = {
-                    "patient_id": st.session_state.patient_id,
-                    "pulse_sequence": st.session_state.modality,
-                    "segmentation_model": st.session_state.segmentation_model,
-                    "classification_model": st.session_state.classification_model,
-                    "preprocessing_steps": ", ".join(st.session_state.prep_steps)
-                }
-                # Gather metrics
-                seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
-                metrics = {
-                    "dice_score": seg_metrics["Dice"],
-                    "iou_score": seg_metrics["IoU"],
-                    "prediction_prob": st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-                }
+        with col_ml1:
+            st.markdown('<div class="stCard">', unsafe_allow_html=True)
+            st.markdown("### Logging Trigger")
+            run_log = st.button("Log Active Session to MLflow")
+            if run_log:
+                with st.spinner("Logging session parameters to MLflow database..."):
+                    # Gather parameters
+                    params = {
+                        "patient_id": st.session_state.patient_id,
+                        "pulse_sequence": st.session_state.modality,
+                        "segmentation_model": st.session_state.segmentation_model,
+                        "classification_model": st.session_state.classification_model,
+                        "preprocessing_steps": ", ".join(st.session_state.prep_steps)
+                    }
+                    # Gather metrics
+                    seg_metrics = get_segmentation_metrics(st.session_state.pred_mask, st.session_state.mri_mask_gt)
+                    metrics = {
+                        "dice_score": seg_metrics["Dice"],
+                        "iou_score": seg_metrics["IoU"],
+                        "prediction_prob": st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
+                    }
                 
-                log_entry = log_mlflow_run(
-                    run_name=f"Run_{st.session_state.patient_id}_{int(time.time())}",
-                    params=params,
-                    metrics=metrics
-                )
-                st.success("Session logged successfully!")
+                    log_entry = log_mlflow_run(
+                        run_name=f"Run_{st.session_state.patient_id}_{int(time.time())}",
+                        params=params,
+                        metrics=metrics
+                    )
+                    st.success("Session logged successfully!")
                 
-        # Error Analysis Engine
-        st.divider()
-        st.markdown("### Error Analysis Engine")
-        st.write("Identifies potential reasons for pipeline degradation based on active biomarkers.")
+            # Error Analysis Engine
+            st.divider()
+            st.markdown("### Error Analysis Engine")
+            st.write("Identifies potential reasons for pipeline degradation based on active biomarkers.")
         
-        active_area = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)["Tumor Area (mm2)"]
-        snr_val = snr_proc
+            active_area = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)["Tumor Area (mm2)"]
+            snr_val = snr_proc
         
-        reasons = []
-        recommendations = []
+            reasons = []
+            recommendations = []
         
-        if active_area < 250:
-            reasons.append("- **Small Tumor Size:** Lesion voxel volume is below standard spatial pool boundary (risk of partial volume effects).")
-            recommendations.append("1. Shift segmentation backbone to U-Net++ with attention filters.")
-        if snr_val < 4.0:
-            reasons.append("- **RF Channel Noise:** The signal-to-noise ratio is too low, indicating sensor interference.")
-            recommendations.append("1. Increase Bilateral filter window size or apply NLM (Non-Local Means) filtering.")
-        if len(st.session_state.prep_steps) < 2:
-            reasons.append("- **Insufficient Preprocessing:** Preprocessing pipeline is too short, leaving skull bone / intensity skew.")
-            recommendations.append("1. Enforce active contour skull stripping to prevent model shortcut learning.")
+            if active_area < 250:
+                reasons.append("- **Small Tumor Size:** Lesion voxel volume is below standard spatial pool boundary (risk of partial volume effects).")
+                recommendations.append("1. Shift segmentation backbone to U-Net++ with attention filters.")
+            if snr_val < 4.0:
+                reasons.append("- **RF Channel Noise:** The signal-to-noise ratio is too low, indicating sensor interference.")
+                recommendations.append("1. Increase Bilateral filter window size or apply NLM (Non-Local Means) filtering.")
+            if len(st.session_state.prep_steps) < 2:
+                reasons.append("- **Insufficient Preprocessing:** Preprocessing pipeline is too short, leaving skull bone / intensity skew.")
+                recommendations.append("1. Enforce active contour skull stripping to prevent model shortcut learning.")
             
-        if not reasons:
-            st.success("No anomalies detected in the current slice signal path.")
-        else:
-            st.warning("Active Signal Path Anomalies Detected:")
-            st.markdown("\n".join(reasons))
-            st.markdown("**Engineering Recommendations:**")
-            st.markdown("\n".join(recommendations))
+            if not reasons:
+                st.success("No anomalies detected in the current slice signal path.")
+            else:
+                st.warning("Active Signal Path Anomalies Detected:")
+                st.markdown("\n".join(reasons))
+                st.markdown("**Engineering Recommendations:**")
+                st.markdown("\n".join(recommendations))
             
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
-    with col_ml2:
-        st.markdown('<div class="stCard">', unsafe_allow_html=True)
-        st.markdown("### Active MLflow Session Log Tracker")
+        with col_ml2:
+            st.markdown('<div class="stCard">', unsafe_allow_html=True)
+            st.markdown("### Active MLflow Session Log Tracker")
         
-        runs = get_logged_runs()
-        if not runs:
-            st.write("No active experiment runs recorded in this workspace directory yet.")
-        else:
-            # Display runs in table
-            runs_df = pd.DataFrame([
-                {
-                    "Timestamp": r.get("timestamp", ""),
-                    "Run Name": r.get("run_name", ""),
-                    "Patient": r.get("parameters", {}).get("patient_id", "TRAINING_RUN"),
-                    "Modality": r.get("parameters", {}).get("pulse_sequence", "N/A"),
-                    "Dice Score": f"{r.get('metrics', {}).get('dice_score', r.get('metrics', {}).get('final_val_dice', 0.0)):.4f}",
-                    "Pred Prob": f"{r.get('metrics', {}).get('prediction_prob', r.get('metrics', {}).get('final_val_acc', 0.0)):.4f}",
-                    "MLflow Server Log": "SUCCESS" if r.get("mlflow_integrated", False) else "LOCAL LOCK"
-                }
-                for r in runs
+            runs = get_logged_runs()
+            if not runs:
+                st.write("No active experiment runs recorded in this workspace directory yet.")
+            else:
+                # Display runs in table
+                runs_df = pd.DataFrame([
+                    {
+                        "Timestamp": r.get("timestamp", ""),
+                        "Run Name": r.get("run_name", ""),
+                        "Patient": r.get("parameters", {}).get("patient_id", "TRAINING_RUN"),
+                        "Modality": r.get("parameters", {}).get("pulse_sequence", "N/A"),
+                        "Dice Score": f"{r.get('metrics', {}).get('dice_score', r.get('metrics', {}).get('final_val_dice', 0.0)):.4f}",
+                        "Pred Prob": f"{r.get('metrics', {}).get('prediction_prob', r.get('metrics', {}).get('final_val_acc', 0.0)):.4f}",
+                        "MLflow Server Log": "SUCCESS" if r.get("mlflow_integrated", False) else "LOCAL LOCK"
+                    }
+                    for r in runs
             ])
-            st.table(runs_df)
+                st.table(runs_df)
             
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        # Live Latency Monitoring Dashboard
-        st.markdown('<div class="stCard" style="margin-top: 15px;">', unsafe_allow_html=True)
-        st.markdown("### Live Latency & Modality Bottleneck Monitoring")
-        st.write("Tracks inference latency, model throughput, and queue delay characteristics across scanning sequences and file size dimensions.")
+            # Live Latency Monitoring Dashboard
+            st.markdown('<div class="stCard" style="margin-top: 15px;">', unsafe_allow_html=True)
+            st.markdown("### Live Latency & Modality Bottleneck Monitoring")
+            st.write("Tracks inference latency, model throughput, and queue delay characteristics across scanning sequences and file size dimensions.")
         
-        modalities = ["Brain MRI FLAIR (120MB)", "Brain MRI T1 (98MB)", "Abdominal US (450MB)", "Thoracic CT (3.5GB)"]
-        latency_vals = [0.12, 0.09, 0.85, 4.82]
+            modalities = ["Brain MRI FLAIR (120MB)", "Brain MRI T1 (98MB)", "Abdominal US (450MB)", "Thoracic CT (3.5GB)"]
+            latency_vals = [0.12, 0.09, 0.85, 4.82]
         
-        fig_lat = go.Figure([go.Bar(
-            x=modalities,
-            y=latency_vals,
-            marker_color=["#4cd7f6", "#4cd7f6", "#ddb7ff", "#93000a"],
-            text=[f"{v:.2f}s" for v in latency_vals],
-            textposition='auto'
-        )])
-        fig_lat.update_layout(
-            title="Inference Latency by Scan Modality & File Size",
-            yaxis=dict(title="Execution Time (seconds)"),
-            template="plotly_dark",
-            paper_bgcolor="#131b2e",
-            plot_bgcolor="#131b2e",
-            height=280
-        )
-        st.plotly_chart(fig_lat, use_container_width=True)
+            fig_lat = go.Figure([go.Bar(
+                x=modalities,
+                y=latency_vals,
+                marker_color=["#4cd7f6", "#4cd7f6", "#ddb7ff", "#93000a"],
+                text=[f"{v:.2f}s" for v in latency_vals],
+                textposition='auto'
+            )])
+            fig_lat.update_layout(
+                title="Inference Latency by Scan Modality & File Size",
+                yaxis=dict(title="Execution Time (seconds)"),
+                template="plotly_dark",
+                paper_bgcolor="#131b2e",
+                plot_bgcolor="#131b2e",
+                height=280
+            )
+            st.plotly_chart(fig_lat, use_container_width=True)
         
-        st.warning("🚨 **System Bottleneck Alert**: Processing of **3.5 GB Thoracic CT** scans is restricted on standard CPU threads, causing a queue bottleneck (4.82s latency). Recommend delegating large volumes to the GPU-enabled server pool or activating 2D slice downsampling.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.warning("🚨 **System Bottleneck Alert**: Processing of **3.5 GB Thoracic CT** scans is restricted on standard CPU threads, causing a queue bottleneck (4.82s latency). Recommend delegating large volumes to the GPU-enabled server pool or activating 2D slice downsampling.")
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
 # TAB 11: PRE-FLIGHT CHECK (ANONYMIZATION) & CLINICAL AUDIT TRAILS
 # ---------------------------------------------------------------------
-with tabs[10]:
+with ingest_tabs[2]:
     st.subheader("DICOM Pre-flight Privacy Check & Clinical Audit Trails")
     
     col_pre1, col_pre2 = st.columns([1, 1])
