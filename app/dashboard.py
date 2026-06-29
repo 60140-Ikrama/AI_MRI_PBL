@@ -681,6 +681,18 @@ with tabs[1]:
                 progress_bar.progress(percent_complete + 1)
                 status_text.caption(f"Ingesting & registering slice {percent_complete//5 + 1} of {len(uploaded_files)}...")
             st.success(f"Successfully processed {len(uploaded_files)} frames in background.")
+            
+            # Show detailed upload table response
+            files_info = []
+            for f in uploaded_files:
+                files_info.append({
+                    "Filename": f.name,
+                    "Size": f"{f.size / 1024:.1f} KB",
+                    "Ingest Status": "Cached & Queued",
+                    "PACS Sync": "Sync Pending"
+                })
+            st.table(pd.DataFrame(files_info))
+            st.info("ℹ️ **Active Viewport Preserved**: The active workspace scan is not overwritten. Uploaded series are queued for subsequent batch sessions.")
             log_audit_action("DICOM_INGEST", st.session_state.patient_id, f"Uploaded {len(uploaded_files)} files. Status: Celery Success.")
             
         st.divider()
