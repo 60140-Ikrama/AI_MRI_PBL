@@ -307,6 +307,10 @@ def get_xai_visualization(image, heatmap, title="Grad-CAM"):
     Generates a color overlay of the XAI heatmap onto the grayscale MRI.
     Uses JET colormap for hot spot visibility.
     """
+    # Resize heatmap to match image dimensions if they differ
+    if heatmap.shape != image.shape:
+        heatmap = cv2.resize(heatmap, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
+        
     img_u8 = (np.clip(image, 0, 1) * 255).astype(np.uint8)
     heatmap_u8 = (np.clip(heatmap, 0, 1) * 255).astype(np.uint8)
     
