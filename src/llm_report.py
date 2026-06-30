@@ -53,24 +53,24 @@ def generate_clinical_report(
     === SEGMENTATION FINDINGS ===
     {segmentation_txt}
     
-    === QUANTITATIVE BIOMARKERS ===
+    === QUANTITATIVE NEURO-BIOMARKERS ===
     {biomarkers_txt}
     
-    === CLINICAL RISK ASSESSMENT ===
+    === WHO TUMOR CATEGORIZATION & BT-RADS ===
     {risk_txt}
     
     === EXPLAINABLE AI (XAI) SUMMARY ===
     {xai_txt}
     
-    Write a structured clinical report in markdown. The report should look professional and read like an official hospital oncology/radiology report. 
+    Write a structured clinical report in markdown. The report should look professional and read like an official hospital neuroradiology report. 
     Incorporate medical terminology (e.g. signal hyperintensity, mass effect, cellular density, boundary infiltrative margins).
     
     Ensure you structure it into these exact sections:
     1. CLINICAL STUDY OVERVIEW
-    2. QUANTITATIVE IMAGING ANALYSIS (discuss the biomarkers and shape irregularity)
-    3. MODEL PERFORMANCE & STABILITY (mention the Dice score and classification confidence)
-    4. EXPLAINABILITY & BIOMEDICAL TRUST CHECK (validate the CAM focus and comment on explainability confidence)
-    5. INTERPRETIVE RISK DIAGNOSIS
+    2. QUANTITATIVE IMAGING ANALYSIS (Discuss the neuro-biomarker panel, necrosis, and edema)
+    3. MODEL PERFORMANCE & STABILITY (Mention the Dice score and classification confidence)
+    4. EXPLAINABILITY & BIOMEDICAL TRUST CHECK (Validate the CAM focus and comment on explainability confidence)
+    5. INTERPRETIVE RISK DIAGNOSIS (Provide WHO Tumor Categorization Grade and estimated BT-RADS score)
     6. TARGETED CLINICAL RECOMMENDATIONS (e.g. referral, contrast MRI, stereotactic biopsy, surgical planning)
     
     At the bottom of the report, you must append this mandatory disclaimer in bold:

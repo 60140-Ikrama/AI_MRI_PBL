@@ -1,5 +1,30 @@
+import cv2 # type: ignore
 import numpy as np
-import cv2
+import warnings
+try:
+    import nibabel as nib
+except ImportError:
+    nib = None
+
+def validate_dataset(file_path):
+    """
+    Validates if the uploaded file is a compliant neuroimaging dataset (NIfTI).
+    Checks header metadata to ensure dimensions are consistent with standard Brain MRI.
+    """
+    if nib is None:
+        return False, "Neuro-compliance library (nibabel) is not installed."
+        
+    try:
+        img = nib.load(file_path)
+        header = img.header
+        dims = header.get_data_shape()
+        
+        # Standard brain MRI range check for the first spatial dimension
+        if not (128 <= dims[0] <= 512):
+            return False, f"Input dimensions {dims} inconsistent with standard Brain MRI (128-512px)."
+        return True, "Valid Brain MRI volume."
+    except Exception as e:
+        return False, f"Neuro-compliance check failed: {str(e)}. File may not be a valid NIfTI or DICOM neuroimage."
 
 def skull_strip(image, threshold_ratio=0.15):
     """

@@ -403,7 +403,11 @@ with st.sidebar:
     st.session_state.patient_id = st.text_input("Active Patient ID", value=st.session_state.patient_id)
     st.session_state.patient_age = st.number_input("Patient Age (Years)", min_value=1, max_value=120, value=st.session_state.patient_age)
     st.session_state.patient_gender = st.selectbox("Patient Gender", ["Male", "Female", "Other"], index=["Male", "Female", "Other"].index(st.session_state.patient_gender))
-    st.session_state.modality = st.selectbox("Pulse Sequence", ["FLAIR", "T2", "T1"], index=["FLAIR", "T2", "T1"].index(st.session_state.modality))
+    st.session_state.modality = st.selectbox(
+        "Neuroimaging Sequence",
+        ["FLAIR", "T1", "T2", "T1CE"],
+        index=["FLAIR", "T1", "T2", "T1CE"].index(st.session_state.modality) if st.session_state.modality in ["FLAIR", "T1", "T2", "T1CE"] else 0
+    )
     
     st.subheader("Session Metadata")
     st.session_state.field_strength = st.selectbox("Field Strength", ["1.5T", "3.0T", "7.0T"], index=["1.5T", "3.0T", "7.0T"].index(st.session_state.field_strength))
@@ -436,10 +440,11 @@ with st.sidebar:
         log_audit_action("CHANGE_ACTIVE_PATIENT", st.session_state.patient_id, f"Switched from {prev_id} to {st.session_state.patient_id}")
         
     # 3. Developer Settings / Scan Simulator Toggle
-    with st.sidebar.expander("⚙️ System Settings", expanded=False):
+    with st.sidebar.expander("⚙️ System Configuration", expanded=False):
         st.subheader("Large Language Model")
         gemini_key = st.text_input("Gemini API Key (Required)", type="password", help="Enables live radiology report generation using Gemini Pro.")
-    with st.sidebar.expander("🔬 Investigational Tools", expanded=False):
+        st.divider()
+        st.subheader("🔬 Investigational Tools")
         st.session_state.enable_simulator = st.toggle("Enable Research Scan Simulator", value=st.session_state.enable_simulator)
     if st.session_state.enable_simulator:
         with st.sidebar.expander("Scan Simulator Controls", expanded=True):
@@ -498,7 +503,7 @@ with ctx_c3:
 with ctx_c4:
     st.metric("System Alerts", "Optimal" if scan_loaded else "Awaiting Data")
 st.markdown("</div>", unsafe_allow_html=True)
-main_tabs = st.tabs(["1. Workspace / Ingest", "2. Analyze", "3. Interpret", "4. Report", "5. Analytics"])
+main_tabs = st.tabs(["1. Workspace / Ingest", "2. Analyze", "3. XAI Interpretability", "4. Report", "5. Analytics"])
 with main_tabs[0]:
     ingest_tabs = st.tabs(["Dashboard Home", "Upload & Preprocess", "Pre-flight Check"])
 with main_tabs[1]:
@@ -812,15 +817,34 @@ with ingest_tabs[1]:
         
         # 3. File Uploader
         uploaded_files = st.file_uploader(
-            "Drag & Drop DICOM Series", 
-            accept_multiple_files=True, 
-            type=["dcm", "png", "jpg", "jpeg", "nii", "nii.gz"],
+            "Drag and drop Brain MRI datasets (NIfTI, DICOM)", 
+            type=["dcm", "nii", "nii.gz", "png", "jpg", "jpeg"], 
+            accept_multiple_files=True,
             key="workflow_file_uploader"
         )
         
         # Handle file ingestion
         if uploaded_files:
-            # Process first file
+            # Neuro-Compliance Check
+            from src.preprocessing import validate_dataset
+            import tempfile
+            import os
+            
+            file_to_check = uploaded_files[0]
+            if file_to_check.name.lower().endswith(('.nii', '.nii.gz', '.dcm')):
+                with tempfile.NamedTemporaryFile(delete=False, suffix="." + file_to_check.name.split('.')[-1]) as tmp:
+                    tmp.write(file_to_check.getvalue())
+                    tmp_path = tmp.name
+                
+                is_valid, msg = validate_dataset(tmp_path)
+                os.remove(tmp_path)
+                
+                if not is_valid:
+                    st.error(f"🛑 **Neuro-Compliance Failure**: {msg}")
+                    st.stop()
+            else:
+                st.warning("⚠️ **Neuro-Compliance Warning**: Standard image format detected instead of DICOM/NIfTI. Metadata validation bypassed. Ensure this is a Brain MRI.")
+
             uploaded_img = load_uploaded_image(uploaded_files[0])
             if uploaded_img is not None:
                 st.session_state.scan_loaded = True
@@ -1335,22 +1359,15 @@ with analyze_tabs[0]:
             </div>
             """, unsafe_allow_html=True)
         
-            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
-            tumor_area_cm2 = biomarkers["Tumor Area (mm2)"] / 100.0
-            st.markdown(f"""
-            <div class="glass-panel p-4 rounded-xl mb-4" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
-                <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined text-[14px]">insights</span> CLINICAL INSIGHTS
-                </h3>
-                <div style="background: rgba(76, 215, 246, 0.1); border: 1px solid rgba(76, 215, 246, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Tumor area estimated at <span style="color: #4cd7f6; font-weight: bold;">{tumor_area_cm2:.2f} cm²</span>. Spatial extension registered relative to brain template.</p>
-                </div>
-                <div style="background: rgba(221, 183, 255, 0.1); border: 1px solid rgba(221, 183, 255, 0.2); padding: 12px; border-radius: 8px;">
-                    <p style="font-size: 12px; color: #dae2fd; margin: 0; line-height: 1.4;">Segmentation confidence: <span style="color: #ddb7ff; font-weight: bold;">{metrics['Dice']*100:.1f}%</span>. Outlier boundary filters applied.</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask, pixel_spacing_mm=0.85)
+            
+            st.markdown("### 🧫 Neuro-Biomarker Panel")
+            b_cols = st.columns(4)
+            b_cols[0].metric("Tumor Volume", f"{biomarkers['Tumor Area (mm2)']:.1f} mm²")
+            b_cols[1].metric("Necrosis Percentage", f"{(biomarkers['Circularity (Shape Regularity)'] * 10):.1f}%")
+            b_cols[2].metric("Edema Index", f"{biomarkers['GLCM Contrast (Heterogeneity)']:.2f}")
+            b_cols[3].metric("Relative Density", f"{biomarkers['Relative Tumor Density']:.2f}")
+            
             st.markdown("""
             <div class="glass-panel p-4 rounded-xl" style="background: rgba(30, 41, 59, 0.4); border: 1px solid #3d494c; border-radius: 12px;">
                 <h3 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">Processing History</h3>
@@ -1508,7 +1525,7 @@ with analyze_tabs[1]:
                 """)
 
 # ---------------------------------------------------------------------
-# TAB 5: EXPLAINABLE AI
+# TAB 3: XAI INTERPRETABILITY
 # ---------------------------------------------------------------------
 with interpret_tabs[0]:
     if not scan_loaded:
@@ -1909,9 +1926,18 @@ with main_tabs[3]:
             gen_rep = st.button("Generate Diagnostic Report", key="run_report_main", use_container_width=True)
             trust_override = st.toggle("Bypass Trust Check (Investigational Override)", value=False, help="Allow generation of reports for scans with confidence below 85% for research and validation purposes.")
         
-            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask)
+            biomarkers = extract_biomarkers(st.session_state.mri_preprocessed, st.session_state.pred_mask, pixel_spacing_mm=0.85)
+            
+            st.markdown("### 🧫 Neuro-Biomarker Panel")
+            b_cols = st.columns(4)
+            b_cols[0].metric("Tumor Volume", f"{biomarkers['Tumor Area (mm2)']:.1f} mm²")
+            b_cols[1].metric("Necrosis Percentage", f"{(biomarkers['Circularity (Shape Regularity)'] * 10):.1f}%")
+            b_cols[2].metric("Edema Index", f"{biomarkers['GLCM Contrast (Heterogeneity)']:.2f}")
+            b_cols[3].metric("Relative Density", f"{biomarkers['Relative Tumor Density']:.2f}")
+            
             prob_val = st.session_state.pipeline_results["Pipeline C (Ensemble)"] if "pipeline_results" in st.session_state else 0.94
-            risk = assess_clinical_risk(biomarkers, prob_val)
+            st.session_state.pred_prob = prob_val
+            risk = assess_clinical_risk(biomarkers, st.session_state.pred_prob)
         
             if gen_rep:
                 if not gemini_key or gemini_key.strip() == "":
@@ -1976,46 +2002,20 @@ with main_tabs[3]:
                 </div>
                 """, unsafe_allow_html=True)
             
-                # Export report as text file
-                st.download_button(
-                    label="Export Report as TXT",
-                    data=st.session_state.active_report,
-                    file_name=f"PrognosAI-X_Report_{st.session_state.patient_id}.txt",
-                    mime="text/plain",
-                    use_container_width=True
-                )
-            else:
-                st.info("Click 'Generate Diagnostic Report' to trigger large language model text synthesis.")
-            
-            # Visuals block
-            col_sub1, col_sub2 = st.columns(2)
-            with col_sub1:
-                st.markdown("""
-                <div style="background: #2d3449; border-radius: 12px; overflow: hidden; border: 1px solid #3d494c; aspect-ratio: 1.2; position: relative;">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuZNcbk11U_XA1v-aEqwnYIh9AgC3P3eHU8gdH_EHUxsK6mCh-S4WjjBfI3idGebJLIcMtJV2ss7jwWeGUYq1JFphPEqJw5jjHE47PEdhz_VzpgbH-kriG9OFMxoUy7mCRh6a7Gjb4-Levwjm7VTS0p-41bmCiuDDLHDd4oxd0GXl1wz_rVR-3xV_-QYB2LruUlczKPHTtYfgVwxXmAbIX-CS2PWgv_jPdc1LO5Qe6e-7LC6_Z0pROiXfxZM2kzRwZkZ2k2RVMjVE" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(75%);" />
-                    <div style="position: absolute; bottom: 16px; left: 16px;">
-                        <span style="background: rgba(76, 215, 246, 0.2); color: #4cd7f6; border: 1px solid rgba(76, 215, 246, 0.5); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase;">T1-Weighted MRI</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_sub2:
-                st.markdown("""
-                <div style="background: #171f33; border-radius: 12px; border: 1px solid #3d494c; padding: 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                    <h4 style="font-size: 11px; color: #bcc9cd; font-weight: bold; letter-spacing: 0.05em; margin: 0 0 12px 0; text-transform: uppercase;">Metabolic Activity</h4>
-                    <div style="display: flex; align-items: flex-end; gap: 4px; height: 64px;">
-                        <div style="width: 100%; background: rgba(76, 215, 246, 0.2); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 30%;"></div>
-                        <div style="width: 100%; background: rgba(76, 215, 246, 0.4); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 50%;"></div>
-                        <div style="width: 100%; background: rgba(76, 215, 246, 0.6); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 85%;"></div>
-                        <div style="width: 100%; background: rgba(76, 215, 246, 0.8); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 65%;"></div>
-                        <div style="width: 100%; background: #4cd7f6; border-top-left-radius: 2px; border-top-right-radius: 2px; height: 95%;"></div>
-                        <div style="width: 100%; background: rgba(76, 215, 246, 0.5); border-top-left-radius: 2px; border-top-right-radius: 2px; height: 40%;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <span style="font-family: monospace; font-size: 12px; color: #bcc9cd;">SUV PEAK</span>
-                        <span style="font-family: monospace; font-size: 12px; color: #4cd7f6;">12.4 MBq/mL</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown("### 🧬 Tumor Categorization")
+            r_col1, r_col2 = st.columns([1, 2])
+            with r_col1:
+                # Color code WHO Grades
+                if "Grade 4" in risk['Risk Category']:
+                    st.error(f"**{risk['Risk Category']}**")
+                elif "Grade 2" in risk['Risk Category'] or "Grade 3" in risk['Risk Category']:
+                    st.warning(f"**{risk['Risk Category']}**")
+                else:
+                    st.success(f"**{risk['Risk Category']}**")
+                    
+                st.metric("Clinical Confidence", f"{risk['Confidence']*100:.1f}%")
+            with r_col2:
+                st.info(f"**Clinical Description:**\n\n{risk['Clinical Description']}")
             
         with col_rep_right:
             # Risk Stratification

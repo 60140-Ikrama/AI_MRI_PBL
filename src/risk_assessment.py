@@ -235,24 +235,24 @@ def assess_clinical_risk(biomarkers, prediction_prob):
         
     # Map to Risk Categories
     if risk_score >= 7.5:
-        category = "High Risk"
+        category = "Grade 4 Glioma"
         description = (
             "Large, highly irregular tumor boundary with micro-texture heterogeneity. "
-            "Suggestive of a high-grade aggressive neoplasm (e.g., Glioblastoma Multiforme, G4) "
+            "Suggestive of a high-grade aggressive neoplasm (e.g., Glioblastoma Multiforme, WHO Grade 4) "
             "with surrounding mass effect and active infiltration edema."
         )
     elif risk_score >= 4.0:
-        category = "Moderate Risk"
+        category = "Grade 2-3 Glioma"
         description = (
             "Medium-sized tumor with moderate boundary irregularity. "
-            "Suggestive of a mid-grade glioma (G2-G3) or active pituitary macro-adenoma. "
+            "Suggestive of a mid-grade glioma (WHO Grade 2-3) or active pituitary macro-adenoma. "
             "Requires immediate radiological follow-up and contrast-enhanced study."
         )
     else:
-        category = "Low Risk"
+        category = "Grade 1 Glioma / Benign"
         description = (
             "Small, encapsulated lesion with high circularity. "
-            "Consistent with a benign slow-growing neoplasm (e.g., Meningioma, G1, or vestibular schwannoma). "
+            "Consistent with a benign slow-growing neoplasm (e.g., Meningioma, WHO Grade 1, or vestibular schwannoma). "
             "Observation with periodic MRI surveillance or stereotactic radiosurgery might be indicated."
         )
         
@@ -265,3 +265,4 @@ def assess_clinical_risk(biomarkers, prediction_prob):
         "Clinical Description": description,
         "Confidence": risk_confidence
     }
+
