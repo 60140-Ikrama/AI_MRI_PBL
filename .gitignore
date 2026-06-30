@@ -130,3 +130,5 @@ mlruns/
 
 # PrognosAI-X local runs file
 mlflow_local_runs.json
+
+clinical_workstation.db
