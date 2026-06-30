@@ -38,10 +38,12 @@ def crop_roi(image, mask, padding=15):
     
     return roi, (x_min, y_min, x_max, y_max)
 
-def run_pipeline_a(image, model_name="ResNet50"):
+def run_pipeline_a(image, model_name="ResNet50", params=None):
     """
     Pipeline A: Whole MRI image -> Classifier.
     """
+    if params:
+        print(f"[INFO] Pipeline A running with active parameters: {params}")
     model = get_classification_model(model_name, num_classes=4)
     model.eval()
     
@@ -57,10 +59,12 @@ def run_pipeline_a(image, model_name="ResNet50"):
         
     return probs, img_resized
 
-def run_pipeline_b(image, mask, model_name="ResNet50"):
+def run_pipeline_b(image, mask, model_name="ResNet50", params=None):
     """
     Pipeline B: MRI -> Segmentation -> ROI Crop -> Classifier.
     """
+    if params:
+        print(f"[INFO] Pipeline B running with active parameters: {params}")
     model = get_classification_model(model_name, num_classes=4)
     model.eval()
     
@@ -76,11 +80,13 @@ def run_pipeline_b(image, mask, model_name="ResNet50"):
         
     return probs, roi, bbox
 
-def run_pipeline_c(image, mask, cnn_name="ResNet50", vit_name="Vision Transformer"):
+def run_pipeline_c(image, mask, cnn_name="ResNet50", vit_name="Vision Transformer", params=None):
     """
     Pipeline C: MRI -> Segmentation -> ROI Crop -> CNN + ViT Ensemble.
     Averages the probabilities of a convolutional network and a transformer.
     """
+    if params:
+        print(f"[INFO] Pipeline C running with active parameters: {params}")
     cnn_model = get_classification_model(cnn_name, num_classes=4)
     vit_model = get_classification_model(vit_name, num_classes=4)
     

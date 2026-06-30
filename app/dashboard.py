@@ -56,7 +56,8 @@ def initialize_session_state():
         'z_offset': 0,
         'mri_preprocessed': None,
         'scan_loaded': False,
-        'enable_simulator': False
+        'enable_simulator': False,
+        'tuning_params': {"lr": 0.0010, "bs": 8, "epochs": 10, "opt": "Adam"}
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -1414,7 +1415,50 @@ with analyze_tabs[1]:
         pass
     else:
         st.subheader("ROI-Guided Classification Analysis")
-    
+        
+        # Hyperparameter Tuning Expander
+        with st.expander("⚙️ Advanced Hyperparameter Tuning", expanded=False):
+            col1, col2 = st.columns(2)
+            with col1:
+                learning_rate = st.number_input(
+                    "Learning Rate", 
+                    min_value=0.0001, 
+                    max_value=0.1, 
+                    value=st.session_state.tuning_params["lr"], 
+                    format="%.4f",
+                    key="tuned_lr"
+                )
+                batch_size = st.selectbox(
+                    "Batch Size", 
+                    [8, 16, 32, 64], 
+                    index=[8, 16, 32, 64].index(st.session_state.tuning_params["bs"]),
+                    key="tuned_bs"
+                )
+            with col2:
+                epochs = st.slider(
+                    "Training Epochs", 
+                    1, 100, 
+                    value=st.session_state.tuning_params["epochs"],
+                    key="tuned_epochs"
+                )
+                optimizer = st.selectbox(
+                    "Optimizer", 
+                    ["Adam", "SGD", "RMSprop"], 
+                    index=["Adam", "SGD", "RMSprop"].index(st.session_state.tuning_params["opt"]),
+                    key="tuned_opt"
+                )
+                
+            st.session_state.tuning_params = {
+                "lr": learning_rate,
+                "bs": batch_size,
+                "epochs": epochs,
+                "opt": optimizer
+            }
+            
+            # Clinical safety check
+            if learning_rate > 0.05:
+                st.warning("⚠️ **Clinical Warning:** Learning rate is set to a highly aggressive level. This may lead to model divergence and weight instability.")
+        
         col_opts1, col_opts2 = st.columns(2)
         with col_opts1:
             clf_model_name = st.selectbox("Classifier Core Backbone", ["MobileNetV2", "EfficientNetV2", "DenseNet121", "ResNet50", "Vision Transformer", "Swin Transformer"])
@@ -1433,13 +1477,13 @@ with analyze_tabs[1]:
                     timeout_limit = 3.0
                 
                     # 1. Pipeline A: Whole MRI
-                    probs_a, _ = run_pipeline_a(st.session_state.mri_preprocessed, clf_model_name)
+                    probs_a, _ = run_pipeline_a(st.session_state.mri_preprocessed, clf_model_name, params=st.session_state.tuning_params)
                 
                     # 2. Pipeline B: ROI crop
-                    probs_b, roi_b, bbox_b = run_pipeline_b(st.session_state.mri_preprocessed, st.session_state.pred_mask, clf_model_name)
+                    probs_b, roi_b, bbox_b = run_pipeline_b(st.session_state.mri_preprocessed, st.session_state.pred_mask, clf_model_name, params=st.session_state.tuning_params)
                 
                     # 3. Pipeline C: ROI crop + Ensemble
-                    probs_c, roi_c, bbox_c, cnn_p, vit_p = run_pipeline_c(st.session_state.mri_preprocessed, st.session_state.pred_mask, cnn_name="ResNet50", vit_name="Vision Transformer")
+                    probs_c, roi_c, bbox_c, cnn_p, vit_p = run_pipeline_c(st.session_state.mri_preprocessed, st.session_state.pred_mask, cnn_name="ResNet50", vit_name="Vision Transformer", params=st.session_state.tuning_params)
                 
                     # Check elapsed time for timeout
                     elapsed_time = time.time() - t_start
