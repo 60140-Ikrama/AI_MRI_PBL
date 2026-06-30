@@ -42,7 +42,7 @@ def run_pipeline_a(image, model_name="ResNet50"):
     """
     Pipeline A: Whole MRI image -> Classifier.
     """
-    model = get_classification_model(model_name)
+    model = get_classification_model(model_name, num_classes=4)
     model.eval()
     
     # Resize whole MRI to 224x224
@@ -61,7 +61,7 @@ def run_pipeline_b(image, mask, model_name="ResNet50"):
     """
     Pipeline B: MRI -> Segmentation -> ROI Crop -> Classifier.
     """
-    model = get_classification_model(model_name)
+    model = get_classification_model(model_name, num_classes=4)
     model.eval()
     
     # Crop ROI
@@ -81,8 +81,8 @@ def run_pipeline_c(image, mask, cnn_name="ResNet50", vit_name="Vision Transforme
     Pipeline C: MRI -> Segmentation -> ROI Crop -> CNN + ViT Ensemble.
     Averages the probabilities of a convolutional network and a transformer.
     """
-    cnn_model = get_classification_model(cnn_name)
-    vit_model = get_classification_model(vit_name)
+    cnn_model = get_classification_model(cnn_name, num_classes=4)
+    vit_model = get_classification_model(vit_name, num_classes=4)
     
     cnn_model.eval()
     vit_model.eval()

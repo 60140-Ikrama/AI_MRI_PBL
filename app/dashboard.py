@@ -1447,13 +1447,16 @@ with analyze_tabs[1]:
                         raise TimeoutError(f"Classification timeout exceeded. Elapsed time: {elapsed_time:.2f}s (Threshold: {timeout_limit}s). Processing of multi-spectral queue scan was aborted to ensure system stability.")
                 
                     st.session_state.pipeline_results = {
-                        "Pipeline A (Whole MRI)": float(probs_a[1]),
-                        "Pipeline B (ROI Crop)": float(probs_b[1]),
-                        "Pipeline C (Ensemble)": float(probs_c[1]),
+                        "Pipeline A (Whole MRI)": float(1.0 - probs_a[0]),
+                        "Pipeline B (ROI Crop)": float(1.0 - probs_b[0]),
+                        "Pipeline C (Ensemble)": float(1.0 - probs_c[0]),
                         "roi": roi_b,
                         "bbox": bbox_b,
-                        "cnn_p": float(cnn_p[1]),
-                        "vit_p": float(vit_p[1])
+                        "cnn_p": float(1.0 - cnn_p[0]),
+                        "vit_p": float(1.0 - vit_p[0]),
+                        "class_probs_a": probs_a.tolist(),
+                        "class_probs_b": probs_b.tolist(),
+                        "class_probs_c": probs_c.tolist(),
                     }
                     st.success("Pipelines completed execution.")
                 except TimeoutError as te:
@@ -2003,6 +2006,20 @@ with main_tabs[3]:
                 """, unsafe_allow_html=True)
             
             st.markdown("### 🧬 Tumor Categorization")
+            
+            # Show Neural Network Classification result if available
+            if "pipeline_results" in st.session_state and "class_probs_c" in st.session_state.pipeline_results:
+                c_probs = st.session_state.pipeline_results["class_probs_c"]
+                class_names = ["No Tumor (Normal)", "Glioma", "Meningioma", "Pituitary Tumor"]
+                pred_idx = int(np.argmax(c_probs))
+                pred_class_name = class_names[pred_idx]
+                pred_class_prob = c_probs[pred_idx]
+                
+                if pred_idx > 0:
+                    st.success(f"🤖 **AI Classification (Ensemble):** **{pred_class_name}** ({pred_class_prob*100:.1f}% confidence)")
+                else:
+                    st.info(f"🤖 **AI Classification (Ensemble):** **{pred_class_name}** ({pred_class_prob*100:.1f}% confidence)")
+            
             r_col1, r_col2 = st.columns([1, 2])
             with r_col1:
                 # Color code WHO Grades

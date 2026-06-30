@@ -49,11 +49,25 @@ class MRIDataset(Dataset):
         if not self.use_synthetic:
             # Load real image/mask from disk
             img_path = os.path.join(self.image_dir, self.file_names[idx])
-            mask_path = os.path.join(self.mask_dir, self.file_names[idx])
+            # The mask has the same basename but .png extension
+            base_name, _ = os.path.splitext(self.file_names[idx])
+            mask_path = os.path.join(self.mask_dir, base_name + ".png")
             
             # Read grayscale
             img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
+            
+            # Extract label from filename
+            if "_gl_" in base_name:
+                class_label = 1 # Glioma
+            elif "_me_" in base_name:
+                class_label = 2 # Meningioma
+            elif "_pi_" in base_name:
+                class_label = 3 # Pituitary
+            elif "_nt_" in base_name:
+                class_label = 0 # No tumor
+            else:
+                class_label = 0
         else:
             # Generate synthetic image on the fly
             # Use deterministic seed per index to keep dataset static during epochs
@@ -75,18 +89,21 @@ class MRIDataset(Dataset):
                 seed=seed_val
             )
             
+            if tumor_present:
+                class_label = np.random.choice([1, 2, 3])
+            else:
+                class_label = 0
+            
         # Resize to 224x224 (Standard classifier / segmenter size)
         img_resized = cv2.resize(img, (224, 224), interpolation=cv2.INTER_LINEAR)
         mask_resized = cv2.resize(mask, (224, 224), interpolation=cv2.INTER_NEAREST)
-        
-        # Classification label (1 if tumor present, 0 otherwise)
-        class_label = 1 if np.sum(mask_resized) > 10 else 0
         
         # Convert to PyTorch tensors (Channel, Height, Width)
         img_t = torch.tensor(img_resized, dtype=torch.float32).unsqueeze(0)
         mask_t = torch.tensor(mask_resized, dtype=torch.float32).unsqueeze(0)
         
         return img_t, mask_t, torch.tensor(class_label, dtype=torch.long)
+
 
 # =====================================================================
 # 2. Training Loops
@@ -192,7 +209,7 @@ def train_classification(epochs=3, batch_size=8, lr=1e-3, device="cpu"):
     loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     loader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
     
-    model = get_classification_model("ResNet50").to(device)
+    model = get_classification_model("ResNet50", num_classes=4).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
     
